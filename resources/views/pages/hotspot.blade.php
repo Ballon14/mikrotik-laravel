@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', '📶 Hotspot <span>Active</span>')
+@section('title', '📶 Hotspot Active')
 
 @section('content')
 <div class="card">

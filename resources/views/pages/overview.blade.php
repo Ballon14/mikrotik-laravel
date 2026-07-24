@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', '📊 System <span>Overview</span>')
+@section('title', '📊 System Overview')
 
 @section('content')
 <!-- Stats Grid -->

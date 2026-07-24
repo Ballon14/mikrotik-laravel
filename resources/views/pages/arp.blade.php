@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', '📡 ARP <span>Table</span>')
+@section('title', '📡 ARP Table')
 
 @section('content')
 <div class="card">

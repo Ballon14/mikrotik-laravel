@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', '🔌 Network <span>Interfaces</span>')
+@section('title', '🔌 Network Interfaces')
 
 @section('content')
 <div class="card">

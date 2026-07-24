@@ -1,14 +1,22 @@
-# 📡 MikroTik Dashboard Monitor (Laravel)
+# 📡 MikroTik Dashboard Monitor & Billing System
 
-A modern, high-performance web dashboard for monitoring your MikroTik RouterOS devices. Built with **Laravel**, this dashboard uses a background daemon architecture to provide real-time metrics without spamming router logs or consuming excessive router CPU.
+A modern, high-performance web dashboard for monitoring your MikroTik RouterOS devices, complete with a built-in ISP/PPPoE Billing System. Built with **Laravel**, this dashboard uses a background daemon architecture to provide real-time metrics without spamming router logs or consuming excessive router CPU.
 
 ## ✨ Features
 
+### 📡 Network Monitoring & Management
 - **📊 Real-time System Overview:** Monitor CPU Load, RAM Usage, Storage, and Uptime.
 - **📈 Traffic Monitoring:** Live RX/TX traffic charts (Kibps, Mibps, Gibps) rendered via HTML5 Canvas.
 - **🔌 Interfaces:** Status, MAC addresses, and total traffic for all network interfaces.
-- **📋 Network Data:** View DHCP Leases, ARP Table, Routing Table, and Firewall Rules (Filter & NAT).
+- **📋 Network Data & CRUD:** View and Manage (Create, Read, Update, Delete) DHCP Leases, Firewall Rules (Filter & NAT), and IP Addresses.
+- **🔒 IP Isolation:** Instantly isolate customer IPs via automated firewall address-lists.
 - **📶 Services:** Monitor active Hotspot users and view real-time system logs.
+
+### 💳 ISP/PPPoE Billing System
+- **🔐 Secure Authentication:** Dashboard is protected by a sleek login system.
+- **📦 Package Management:** Define internet packages (Name, Price, Speed, Description).
+- **👥 Customer Management:** Register customers with PPPoE credentials, link them to packages, and track their status (Active/Inactive/Isolated).
+- **🧾 Invoice Management:** Generate bills for customers, track payment dates, and monitor Unpaid/Paid statuses.
 
 ## 🏗️ Architecture Highlight: Background Polling
 
@@ -27,6 +35,7 @@ To prevent the classic issue of API login spam (where PHP's stateless nature cau
 - PHP 8.1+
 - Composer
 - Node.js & NPM
+- MySQL or SQLite (for Billing & Sessions)
 - A MikroTik Router with the API service enabled (Port `8728`). To enable it on your router:
   ```routeros
   /ip service set api disabled=no
@@ -50,6 +59,14 @@ Copy the `.env.example` file to `.env` and generate an application key:
 cp .env.example .env
 php artisan key:generate
 ```
+
+Configure your **Database** in `.env` (MySQL or SQLite) and set `SESSION_DRIVER=database`.
+Then run migrations and seed the default admin account:
+```bash
+php artisan migrate
+php artisan db:seed
+```
+*(Default Admin Login — Email: admin@billing.com / Password: admin)*
 
 Add your MikroTik credentials to the bottom of the `.env` file:
 ```env
@@ -82,7 +99,7 @@ Open your web browser and navigate to:
 
 ## 🛠️ Technology Stack
 - **Backend:** Laravel (PHP)
-- **Frontend:** Blade Templates, Vanilla JavaScript, Vanilla CSS
+- **Frontend:** Blade Templates, Vanilla JavaScript, Vanilla CSS (Dark Glassmorphism UI)
 - **Bundler:** Vite
 - **Router API:** Plaintext API Login (Compatible with RouterOS v6.43+)
 

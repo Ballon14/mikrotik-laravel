@@ -52,10 +52,20 @@ class MikrotikMonitor extends Command
                         $this->fetchData('/ip/firewall/nat/print', 'mikrotik_data_fw_nat');
                         $this->fetchData('/ip/arp/print', 'mikrotik_data_arp');
                         $this->fetchData('/interface/wireless/registration-table/print', 'mikrotik_data_wireless');
-                        
+                        $this->fetchData('/ip/address/print', 'mikrotik_data_ip_addresses');
+
+                        // Fetch isolated IPs from firewall filter rules
+                        $this->updateIsolatedIps();
+
                         $logs = $this->api->comm('/log/print');
                         if (is_array($logs)) {
                             Cache::put('mikrotik_data_logs', array_slice($logs, -50), 30);
+                        }
+
+                        // Fetch hotspot active users
+                        $hotspot = $this->api->comm('/ip/hotspot/active/print');
+                        if (is_array($hotspot)) {
+                            Cache::put('mikrotik_data_hotspot_active', $hotspot, 30);
                         }
                     }
 
@@ -119,4 +129,25 @@ class MikrotikMonitor extends Command
             Cache::put($histKey, $history, 120);
         }
     }
+
+    private function updateIsolatedIps()
+    {
+        $rules = Cache::get('mikrotik_data_fw_filter', []);
+        $isolated = [];
+
+        if (is_array($rules)) {
+            foreach ($rules as $rule) {
+                $comment = $rule['comment'] ?? '';
+                if (str_starts_with($comment, 'ISOLASI_IP::')) {
+                    $ip = substr($comment, strlen('ISOLASI_IP::'));
+                    if (!in_array($ip, $isolated)) {
+                        $isolated[] = $ip;
+                    }
+                }
+            }
+        }
+
+        Cache::put('mikrotik_data_isolated_ips', $isolated, 30);
+    }
 }
+

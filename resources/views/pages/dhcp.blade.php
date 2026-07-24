@@ -6,6 +6,9 @@
 <div class="card">
     <div class="card-header">
         <h3><span class="icon">📋</span> DHCP Server Leases</h3>
+        <button class="btn-action btn-add" id="btnAddDhcp" title="Add DHCP Lease">
+            <span>＋</span> Add Lease
+        </button>
     </div>
     <div class="card-body">
         <div class="data-table-wrapper">
@@ -18,12 +21,59 @@
                         <th>Server</th>
                         <th>Status</th>
                         <th>Last Seen</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="dhcpTable">
-                    <tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading...</div></div></td></tr>
+                    <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading...</div></div></td></tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit DHCP Modal -->
+<div class="crud-modal" id="dhcpModal">
+    <div class="crud-modal-content">
+        <div class="crud-modal-header">
+            <h3 id="dhcpModalTitle">Add DHCP Lease</h3>
+            <button class="crud-modal-close" id="dhcpModalClose">✕</button>
+        </div>
+        <form id="dhcpForm" class="crud-form">
+            <input type="hidden" id="dhcpEditId" value="">
+            <div class="form-group">
+                <label for="dhcpAddress">IP Address</label>
+                <input type="text" id="dhcpAddress" name="address" placeholder="192.168.1.100" required>
+            </div>
+            <div class="form-group">
+                <label for="dhcpMacAddress">MAC Address</label>
+                <input type="text" id="dhcpMacAddress" name="mac-address" placeholder="AA:BB:CC:DD:EE:FF" required>
+            </div>
+            <div class="form-group">
+                <label for="dhcpServer">Server</label>
+                <input type="text" id="dhcpServer" name="server" placeholder="dhcp1">
+            </div>
+            <div class="form-group">
+                <label for="dhcpComment">Comment</label>
+                <input type="text" id="dhcpComment" name="comment" placeholder="Optional comment">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" id="dhcpFormCancel">Cancel</button>
+                <button type="submit" class="btn-submit" id="dhcpFormSubmit">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="confirm-modal" id="confirmModal">
+    <div class="confirm-modal-content">
+        <div class="confirm-icon">⚠️</div>
+        <h3>Konfirmasi Hapus</h3>
+        <p id="confirmMessage">Apakah Anda yakin ingin menghapus item ini?</p>
+        <div class="confirm-actions">
+            <button class="btn-cancel" id="confirmCancel">Batal</button>
+            <button class="btn-delete" id="confirmDelete">Hapus</button>
         </div>
     </div>
 </div>

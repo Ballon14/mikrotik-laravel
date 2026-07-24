@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    MikroTik Dashboard — Frontend Application Logic
    ═══════════════════════════════════════════════════════ */
+import './billing.js';
 
 // ─── State ───
 const state = {
@@ -11,7 +12,15 @@ const state = {
     isRefreshing: false,
     intervalId: null,
     data: {},
+    modalOpen: false, // Prevent refresh while modal is open
+    pendingConfirm: null, // For delete confirmation
 };
+
+// ─── CSRF Token ───
+function getCsrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+}
 
 // ─── API Layer ───
 async function apiFetch(endpoint) {
@@ -26,6 +35,49 @@ async function apiFetch(endpoint) {
         console.error(`[API] ${endpoint}:`, err.message);
         throw err;
     }
+}
+
+async function apiPost(endpoint, data) {
+    const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': getCsrfToken(),
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Operation failed');
+    return json;
+}
+
+async function apiPut(endpoint, data) {
+    const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': getCsrfToken(),
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Operation failed');
+    return json;
+}
+
+async function apiDelete(endpoint) {
+    const res = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': getCsrfToken(),
+            'Accept': 'application/json',
+        },
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Operation failed');
+    return json;
 }
 
 // ─── Utility Functions ───
@@ -102,6 +154,9 @@ function closeMobileSidebar() {
 
 // ─── Data Loading ───
 async function loadSectionData(section) {
+    // Skip refresh when modal is open
+    if (state.modalOpen) return;
+
     const spinner = document.getElementById("refreshSpinner");
     if (spinner) spinner.classList.add("active");
     state.isRefreshing = true;
@@ -131,6 +186,21 @@ async function loadSectionData(section) {
                 break;
             case "hotspot":
                 await loadHotspot();
+                break;
+            case "ip-addresses":
+                await loadIpAddresses();
+                break;
+            case "ip-isolation":
+                await loadIpIsolation();
+                break;
+            case "packages":
+                if (typeof window.loadPackages === 'function') await window.loadPackages();
+                break;
+            case "customers":
+                if (typeof window.loadCustomers === 'function') await window.loadCustomers();
+                break;
+            case "invoices":
+                if (typeof window.loadInvoices === 'function') await window.loadInvoices();
                 break;
         }
         updateConnectionStatus(true);
@@ -167,6 +237,50 @@ function showToast(message, type = "error") {
     toastTimeout = setTimeout(() => {
         toast.classList.remove("show");
     }, 4000);
+}
+
+// ─── Confirmation Dialog ───
+function showConfirm(message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("confirmModal");
+        const msgEl = document.getElementById("confirmMessage");
+        const cancelBtn = document.getElementById("confirmCancel");
+        const deleteBtn = document.getElementById("confirmDelete");
+
+        if (!modal) { resolve(false); return; }
+
+        msgEl.textContent = message;
+        modal.classList.add("show");
+
+        const cleanup = () => {
+            modal.classList.remove("show");
+            cancelBtn.removeEventListener("click", onCancel);
+            deleteBtn.removeEventListener("click", onConfirm);
+        };
+
+        const onCancel = () => { cleanup(); resolve(false); };
+        const onConfirm = () => { cleanup(); resolve(true); };
+
+        cancelBtn.addEventListener("click", onCancel);
+        deleteBtn.addEventListener("click", onConfirm);
+    });
+}
+
+// ─── CRUD Modal Helper ───
+function openCrudModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add("show");
+        state.modalOpen = true;
+    }
+}
+
+function closeCrudModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove("show");
+        state.modalOpen = false;
+    }
 }
 
 // ─── Section: Overview ───
@@ -576,19 +690,33 @@ function setupModal() {
     }
 
     document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closeInterfaceModal();
+        if (e.key === "Escape") {
+            closeInterfaceModal();
+            // Close CRUD modals
+            document.querySelectorAll(".crud-modal.show").forEach(m => {
+                m.classList.remove("show");
+                state.modalOpen = false;
+            });
+        }
     });
 }
 
-// ─── Section: DHCP Leases ───
+// ─── Section: DHCP Leases (with CRUD) ───
 async function loadDHCP() {
     const data = await apiFetch("/api/dhcp-leases");
     state.data.dhcp = data;
+
+    // Also load isolated IPs to show isolation status
+    let isolatedIps = [];
+    try {
+        isolatedIps = await apiFetch("/api/isolated-ips");
+    } catch (e) {}
+
     const tbody = document.getElementById("dhcpTable");
     if (!tbody) return;
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Tidak ada DHCP lease</div></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Tidak ada DHCP lease</div></div></td></tr>`;
         return;
     }
 
@@ -599,18 +727,126 @@ async function loadDHCP() {
             const isBound = lease.status === "bound";
             const badgeClass = isBound ? "badge-bound" : "badge-inactive";
             const badgeText = lease.status || "unknown";
+            const isIsolated = isolatedIps.includes(lease.address);
+            const leaseId = lease['.id'] || lease.id || '';
 
             return `<tr>
                 <td>${escapeHtml(lease.hostName || "-")}</td>
-                <td>${escapeHtml(lease.address || "-")}</td>
+                <td>
+                    ${escapeHtml(lease.address || "-")}
+                    ${isIsolated ? '<span class="badge badge-isolated">🔒 Isolated</span>' : ''}
+                </td>
                 <td>${escapeHtml(lease.macAddress || "-")}</td>
                 <td>${escapeHtml(lease.server || "-")}</td>
                 <td><span class="badge ${badgeClass}"><span class="badge-dot"></span>${badgeText}</span></td>
                 <td>${escapeHtml(lease.lastSeen || "-")}</td>
+                <td class="actions-cell">
+                    <button class="btn-icon btn-edit" title="Edit" onclick="editDhcpLease('${escapeHtml(leaseId)}', ${JSON.stringify(lease).replace(/'/g, "\\'").replace(/"/g, '&quot;')})">✏️</button>
+                    <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteDhcpLease('${escapeHtml(leaseId)}')">🗑️</button>
+                    ${!isIsolated
+                        ? `<button class="btn-icon btn-isolate" title="Isolate IP" onclick="quickIsolate('${escapeHtml(lease.address)}')">🔒</button>`
+                        : `<button class="btn-icon btn-unisolate" title="Unisolate IP" onclick="quickUnisolate('${escapeHtml(lease.address)}')">🔓</button>`
+                    }
+                </td>
             </tr>`;
         })
         .join("");
 }
+
+// DHCP CRUD handlers
+function setupDhcpCrud() {
+    const btnAdd = document.getElementById("btnAddDhcp");
+    const modalClose = document.getElementById("dhcpModalClose");
+    const formCancel = document.getElementById("dhcpFormCancel");
+    const form = document.getElementById("dhcpForm");
+
+    if (btnAdd) {
+        btnAdd.addEventListener("click", () => {
+            document.getElementById("dhcpModalTitle").textContent = "Add DHCP Lease";
+            document.getElementById("dhcpEditId").value = "";
+            form.reset();
+            openCrudModal("dhcpModal");
+        });
+    }
+
+    if (modalClose) modalClose.addEventListener("click", () => closeCrudModal("dhcpModal"));
+    if (formCancel) formCancel.addEventListener("click", () => closeCrudModal("dhcpModal"));
+
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById("dhcpEditId").value;
+            const data = {
+                'address': document.getElementById("dhcpAddress").value,
+                'mac-address': document.getElementById("dhcpMacAddress").value,
+                'server': document.getElementById("dhcpServer").value,
+                'comment': document.getElementById("dhcpComment").value,
+            };
+
+            try {
+                if (editId) {
+                    await apiPut(`/api/dhcp-leases/${encodeURIComponent(editId)}`, data);
+                    showToast("DHCP lease berhasil diupdate", "success");
+                } else {
+                    await apiPost("/api/dhcp-leases", data);
+                    showToast("DHCP lease berhasil ditambahkan", "success");
+                }
+                closeCrudModal("dhcpModal");
+                await loadDHCP();
+            } catch (err) {
+                showToast("Gagal: " + err.message, "error");
+            }
+        });
+    }
+}
+
+window.editDhcpLease = function(id, leaseJson) {
+    const lease = typeof leaseJson === 'string' ? JSON.parse(leaseJson) : leaseJson;
+    document.getElementById("dhcpModalTitle").textContent = "Edit DHCP Lease";
+    document.getElementById("dhcpEditId").value = id;
+    document.getElementById("dhcpAddress").value = lease.address || '';
+    document.getElementById("dhcpMacAddress").value = lease.macAddress || '';
+    document.getElementById("dhcpServer").value = lease.server || '';
+    document.getElementById("dhcpComment").value = lease.comment || '';
+    openCrudModal("dhcpModal");
+};
+
+window.deleteDhcpLease = async function(id) {
+    const confirmed = await showConfirm("Apakah Anda yakin ingin menghapus DHCP lease ini?");
+    if (!confirmed) return;
+    try {
+        await apiDelete(`/api/dhcp-leases/${encodeURIComponent(id)}`);
+        showToast("DHCP lease berhasil dihapus", "success");
+        await loadDHCP();
+    } catch (err) {
+        showToast("Gagal menghapus: " + err.message, "error");
+    }
+};
+
+// ─── Quick Isolate / Unisolate (global) ───
+window.quickIsolate = async function(ip) {
+    const confirmed = await showConfirm(`Isolasi IP ${ip}? Traffic forward akan diblokir.`);
+    if (!confirmed) return;
+    try {
+        await apiPost("/api/isolate-ip", { ip });
+        showToast(`IP ${ip} berhasil diisolasi`, "success");
+        loadSectionData(state.activeSection);
+    } catch (err) {
+        showToast("Gagal isolasi: " + err.message, "error");
+    }
+};
+
+window.quickUnisolate = async function(ip) {
+    const confirmed = await showConfirm(`Unisolasi IP ${ip}? Traffic akan dikembalikan normal.`);
+    if (!confirmed) return;
+    try {
+        await apiPost("/api/unisolate-ip", { ip });
+        showToast(`IP ${ip} berhasil diunisolasi`, "success");
+        loadSectionData(state.activeSection);
+    } catch (err) {
+        showToast("Gagal unisolasi: " + err.message, "error");
+    }
+};
 
 // ─── Section: Routes ───
 async function loadRoutes() {
@@ -642,7 +878,7 @@ async function loadRoutes() {
         .join("");
 }
 
-// ─── Section: Firewall ───
+// ─── Section: Firewall (with CRUD) ───
 async function loadFirewall() {
     const [filterData, natData] = await Promise.all([
         apiFetch("/api/firewall/filter").catch(() => []),
@@ -661,20 +897,26 @@ function renderFirewallFilter(data) {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">🛡️</div><div class="empty-state-text">Tidak ada filter rule</div></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">🛡️</div><div class="empty-state-text">Tidak ada filter rule</div></div></td></tr>`;
         return;
     }
 
     tbody.innerHTML = data
         .map((rule, i) => {
+            const ruleId = rule['.id'] || rule.id || '';
             const isDisabled = rule.disabled === "true" || rule.disabled === true;
-            return `<tr>
+            return `<tr class="${isDisabled ? 'row-disabled' : ''}">
                 <td>${i + 1}</td>
                 <td><span class="badge ${rule.chain === 'forward' ? 'badge-info' : rule.chain === 'input' ? 'badge-warning' : 'badge-active'}">${escapeHtml(rule.chain || "-")}</span></td>
                 <td>${escapeHtml(rule.srcAddress || "any")}</td>
                 <td>${escapeHtml(rule.dstAddress || "any")}</td>
                 <td>${escapeHtml(rule.protocol || "any")}</td>
                 <td><span class="badge ${rule.action === 'drop' || rule.action === 'reject' ? 'badge-error' : 'badge-active'}">${escapeHtml(rule.action || "-")}</span></td>
+                <td class="comment-cell">${escapeHtml(rule.comment || "-")}</td>
+                <td class="actions-cell">
+                    <button class="btn-icon btn-edit" title="Edit" onclick='editFirewallFilter("${escapeHtml(ruleId)}", ${JSON.stringify(rule).replace(/'/g, "\\'").replace(/"/g, "&quot;")})'>✏️</button>
+                    <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteFirewallFilter('${escapeHtml(ruleId)}')">🗑️</button>
+                </td>
             </tr>`;
         })
         .join("");
@@ -685,23 +927,189 @@ function renderFirewallNat(data) {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">🔀</div><div class="empty-state-text">Tidak ada NAT rule</div></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">🔀</div><div class="empty-state-text">Tidak ada NAT rule</div></div></td></tr>`;
         return;
     }
 
     tbody.innerHTML = data
         .map((rule, i) => {
-            return `<tr>
+            const ruleId = rule['.id'] || rule.id || '';
+            const isDisabled = rule.disabled === "true" || rule.disabled === true;
+            return `<tr class="${isDisabled ? 'row-disabled' : ''}">
                 <td>${i + 1}</td>
                 <td><span class="badge badge-info">${escapeHtml(rule.chain || "-")}</span></td>
                 <td>${escapeHtml(rule.srcAddress || "any")}</td>
                 <td>${escapeHtml(rule.dstAddress || "any")}</td>
                 <td>${escapeHtml(rule.protocol || "any")}</td>
                 <td><span class="badge badge-active">${escapeHtml(rule.action || "-")}</span></td>
+                <td class="comment-cell">${escapeHtml(rule.comment || "-")}</td>
+                <td class="actions-cell">
+                    <button class="btn-icon btn-edit" title="Edit" onclick='editFirewallNat("${escapeHtml(ruleId)}", ${JSON.stringify(rule).replace(/'/g, "\\'").replace(/"/g, "&quot;")})'>✏️</button>
+                    <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteFirewallNat('${escapeHtml(ruleId)}')">🗑️</button>
+                </td>
             </tr>`;
         })
         .join("");
 }
+
+// Firewall CRUD handlers
+function setupFirewallCrud() {
+    // Filter modal
+    const btnAddFilter = document.getElementById("btnAddFilter");
+    const filterClose = document.getElementById("filterModalClose");
+    const filterCancel = document.getElementById("filterFormCancel");
+    const filterForm = document.getElementById("filterForm");
+
+    if (btnAddFilter) {
+        btnAddFilter.addEventListener("click", () => {
+            document.getElementById("filterModalTitle").textContent = "Add Filter Rule";
+            document.getElementById("filterEditId").value = "";
+            filterForm.reset();
+            openCrudModal("filterModal");
+        });
+    }
+
+    if (filterClose) filterClose.addEventListener("click", () => closeCrudModal("filterModal"));
+    if (filterCancel) filterCancel.addEventListener("click", () => closeCrudModal("filterModal"));
+
+    if (filterForm) {
+        filterForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById("filterEditId").value;
+            const data = {
+                'chain': document.getElementById("filterChain").value,
+                'action': document.getElementById("filterAction").value,
+                'src-address': document.getElementById("filterSrcAddress").value,
+                'dst-address': document.getElementById("filterDstAddress").value,
+                'protocol': document.getElementById("filterProtocol").value,
+                'dst-port': document.getElementById("filterDstPort").value,
+                'comment': document.getElementById("filterComment").value,
+                'disabled': document.getElementById("filterDisabled").checked ? 'yes' : 'no',
+            };
+
+            try {
+                if (editId) {
+                    await apiPut(`/api/firewall/filter/${encodeURIComponent(editId)}`, data);
+                    showToast("Filter rule berhasil diupdate", "success");
+                } else {
+                    await apiPost("/api/firewall/filter", data);
+                    showToast("Filter rule berhasil ditambahkan", "success");
+                }
+                closeCrudModal("filterModal");
+                await loadFirewall();
+            } catch (err) {
+                showToast("Gagal: " + err.message, "error");
+            }
+        });
+    }
+
+    // NAT modal
+    const btnAddNat = document.getElementById("btnAddNat");
+    const natClose = document.getElementById("natModalClose");
+    const natCancel = document.getElementById("natFormCancel");
+    const natForm = document.getElementById("natForm");
+
+    if (btnAddNat) {
+        btnAddNat.addEventListener("click", () => {
+            document.getElementById("natModalTitle").textContent = "Add NAT Rule";
+            document.getElementById("natEditId").value = "";
+            natForm.reset();
+            openCrudModal("natModal");
+        });
+    }
+
+    if (natClose) natClose.addEventListener("click", () => closeCrudModal("natModal"));
+    if (natCancel) natCancel.addEventListener("click", () => closeCrudModal("natModal"));
+
+    if (natForm) {
+        natForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById("natEditId").value;
+            const data = {
+                'chain': document.getElementById("natChain").value,
+                'action': document.getElementById("natAction").value,
+                'src-address': document.getElementById("natSrcAddress").value,
+                'dst-address': document.getElementById("natDstAddress").value,
+                'protocol': document.getElementById("natProtocol").value,
+                'dst-port': document.getElementById("natDstPort").value,
+                'to-addresses': document.getElementById("natToAddresses").value,
+                'to-ports': document.getElementById("natToPorts").value,
+                'comment': document.getElementById("natComment").value,
+                'disabled': document.getElementById("natDisabled").checked ? 'yes' : 'no',
+            };
+
+            try {
+                if (editId) {
+                    await apiPut(`/api/firewall/nat/${encodeURIComponent(editId)}`, data);
+                    showToast("NAT rule berhasil diupdate", "success");
+                } else {
+                    await apiPost("/api/firewall/nat", data);
+                    showToast("NAT rule berhasil ditambahkan", "success");
+                }
+                closeCrudModal("natModal");
+                await loadFirewall();
+            } catch (err) {
+                showToast("Gagal: " + err.message, "error");
+            }
+        });
+    }
+}
+
+window.editFirewallFilter = function(id, ruleJson) {
+    const rule = typeof ruleJson === 'string' ? JSON.parse(ruleJson) : ruleJson;
+    document.getElementById("filterModalTitle").textContent = "Edit Filter Rule";
+    document.getElementById("filterEditId").value = id;
+    document.getElementById("filterChain").value = rule.chain || 'forward';
+    document.getElementById("filterAction").value = rule.action || 'accept';
+    document.getElementById("filterSrcAddress").value = rule.srcAddress || '';
+    document.getElementById("filterDstAddress").value = rule.dstAddress || '';
+    document.getElementById("filterProtocol").value = rule.protocol || '';
+    document.getElementById("filterDstPort").value = rule.dstPort || '';
+    document.getElementById("filterComment").value = rule.comment || '';
+    document.getElementById("filterDisabled").checked = (rule.disabled === 'true' || rule.disabled === true);
+    openCrudModal("filterModal");
+};
+
+window.deleteFirewallFilter = async function(id) {
+    const confirmed = await showConfirm("Apakah Anda yakin ingin menghapus filter rule ini?");
+    if (!confirmed) return;
+    try {
+        await apiDelete(`/api/firewall/filter/${encodeURIComponent(id)}`);
+        showToast("Filter rule berhasil dihapus", "success");
+        await loadFirewall();
+    } catch (err) {
+        showToast("Gagal menghapus: " + err.message, "error");
+    }
+};
+
+window.editFirewallNat = function(id, ruleJson) {
+    const rule = typeof ruleJson === 'string' ? JSON.parse(ruleJson) : ruleJson;
+    document.getElementById("natModalTitle").textContent = "Edit NAT Rule";
+    document.getElementById("natEditId").value = id;
+    document.getElementById("natChain").value = rule.chain || 'srcnat';
+    document.getElementById("natAction").value = rule.action || 'masquerade';
+    document.getElementById("natSrcAddress").value = rule.srcAddress || '';
+    document.getElementById("natDstAddress").value = rule.dstAddress || '';
+    document.getElementById("natProtocol").value = rule.protocol || '';
+    document.getElementById("natDstPort").value = rule.dstPort || '';
+    document.getElementById("natToAddresses").value = rule.toAddresses || '';
+    document.getElementById("natToPorts").value = rule.toPorts || '';
+    document.getElementById("natComment").value = rule.comment || '';
+    document.getElementById("natDisabled").checked = (rule.disabled === 'true' || rule.disabled === true);
+    openCrudModal("natModal");
+};
+
+window.deleteFirewallNat = async function(id) {
+    const confirmed = await showConfirm("Apakah Anda yakin ingin menghapus NAT rule ini?");
+    if (!confirmed) return;
+    try {
+        await apiDelete(`/api/firewall/nat/${encodeURIComponent(id)}`);
+        showToast("NAT rule berhasil dihapus", "success");
+        await loadFirewall();
+    } catch (err) {
+        showToast("Gagal menghapus: " + err.message, "error");
+    }
+};
 
 // Firewall tabs
 function setupFirewallTabs() {
@@ -721,6 +1129,12 @@ function setupFirewallTabs() {
 async function loadARP() {
     const data = await apiFetch("/api/arp");
     state.data.arp = data;
+
+    let isolatedIps = [];
+    try {
+        isolatedIps = await apiFetch("/api/isolated-ips");
+    } catch (e) {}
+
     const tbody = document.getElementById("arpTable");
     if (!tbody) return;
 
@@ -734,8 +1148,12 @@ async function loadARP() {
     tbody.innerHTML = data
         .map((entry) => {
             const isComplete = entry.complete === "true" || entry.complete === true;
+            const isIsolated = isolatedIps.includes(entry.address);
             return `<tr>
-                <td>${escapeHtml(entry.address || "-")}</td>
+                <td>
+                    ${escapeHtml(entry.address || "-")}
+                    ${isIsolated ? '<span class="badge badge-isolated">🔒 Isolated</span>' : ''}
+                </td>
                 <td>${escapeHtml(entry.macAddress || "-")}</td>
                 <td>${escapeHtml(entry.interface || "-")}</td>
                 <td><span class="badge ${isComplete ? 'badge-active' : 'badge-inactive'}"><span class="badge-dot"></span>${isComplete ? "Complete" : "Incomplete"}</span></td>
@@ -812,6 +1230,227 @@ async function loadHotspot() {
     }
 }
 
+// ─── Section: IP Addresses (CRUD) ───
+async function loadIpAddresses() {
+    const data = await apiFetch("/api/ip-addresses");
+    state.data.ipAddresses = data;
+    const tbody = document.getElementById("ipAddressTable");
+    if (!tbody) return;
+
+    // Populate interface select
+    await populateInterfaceSelect();
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">🌐</div><div class="empty-state-text">Tidak ada IP address</div></div></td></tr>`;
+        return;
+    }
+
+    updateNavBadge("ip-addresses", data.length);
+
+    tbody.innerHTML = data
+        .map((addr) => {
+            const addrId = addr['.id'] || addr.id || '';
+            const isDisabled = addr.disabled === "true" || addr.disabled === true;
+            const isDynamic = addr.dynamic === "true" || addr.dynamic === true;
+            return `<tr class="${isDisabled ? 'row-disabled' : ''}">
+                <td><span class="mono">${escapeHtml(addr.address || "-")}</span></td>
+                <td>${escapeHtml(addr.network || "-")}</td>
+                <td>${escapeHtml(addr.interface || "-")}</td>
+                <td>
+                    ${isDynamic ? '<span class="badge badge-info">Dynamic</span>' : '<span class="badge badge-active">Static</span>'}
+                    ${isDisabled ? '<span class="badge badge-disabled">Disabled</span>' : ''}
+                </td>
+                <td class="comment-cell">${escapeHtml(addr.comment || "-")}</td>
+                <td class="actions-cell">
+                    ${!isDynamic ? `
+                        <button class="btn-icon btn-edit" title="Edit" onclick='editIpAddress("${escapeHtml(addrId)}", ${JSON.stringify(addr).replace(/'/g, "\\'").replace(/"/g, "&quot;")})'>✏️</button>
+                        <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteIpAddress('${escapeHtml(addrId)}')">🗑️</button>
+                    ` : '<span class="text-muted">—</span>'}
+                </td>
+            </tr>`;
+        })
+        .join("");
+}
+
+async function populateInterfaceSelect() {
+    const select = document.getElementById("ipAddrInterface");
+    if (!select || select.options.length > 1) return; // Already populated
+
+    try {
+        const interfaces = await apiFetch("/api/interfaces");
+        if (interfaces && interfaces.length > 0) {
+            interfaces.forEach(iface => {
+                const opt = document.createElement("option");
+                opt.value = iface.name;
+                opt.textContent = iface.name;
+                select.appendChild(opt);
+            });
+        }
+    } catch (e) {}
+}
+
+function setupIpAddressCrud() {
+    const btnAdd = document.getElementById("btnAddIpAddress");
+    const modalClose = document.getElementById("ipAddressModalClose");
+    const formCancel = document.getElementById("ipAddressFormCancel");
+    const form = document.getElementById("ipAddressForm");
+
+    if (btnAdd) {
+        btnAdd.addEventListener("click", () => {
+            document.getElementById("ipAddressModalTitle").textContent = "Add IP Address";
+            document.getElementById("ipAddressEditId").value = "";
+            form.reset();
+            openCrudModal("ipAddressModal");
+        });
+    }
+
+    if (modalClose) modalClose.addEventListener("click", () => closeCrudModal("ipAddressModal"));
+    if (formCancel) formCancel.addEventListener("click", () => closeCrudModal("ipAddressModal"));
+
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById("ipAddressEditId").value;
+            const data = {
+                'address': document.getElementById("ipAddrAddress").value,
+                'interface': document.getElementById("ipAddrInterface").value,
+                'comment': document.getElementById("ipAddrComment").value,
+                'disabled': document.getElementById("ipAddrDisabled").checked ? 'yes' : 'no',
+            };
+
+            try {
+                if (editId) {
+                    await apiPut(`/api/ip-addresses/${encodeURIComponent(editId)}`, data);
+                    showToast("IP address berhasil diupdate", "success");
+                } else {
+                    await apiPost("/api/ip-addresses", data);
+                    showToast("IP address berhasil ditambahkan", "success");
+                }
+                closeCrudModal("ipAddressModal");
+                await loadIpAddresses();
+            } catch (err) {
+                showToast("Gagal: " + err.message, "error");
+            }
+        });
+    }
+}
+
+window.editIpAddress = function(id, addrJson) {
+    const addr = typeof addrJson === 'string' ? JSON.parse(addrJson) : addrJson;
+    document.getElementById("ipAddressModalTitle").textContent = "Edit IP Address";
+    document.getElementById("ipAddressEditId").value = id;
+    document.getElementById("ipAddrAddress").value = addr.address || '';
+    document.getElementById("ipAddrInterface").value = addr.interface || '';
+    document.getElementById("ipAddrComment").value = addr.comment || '';
+    document.getElementById("ipAddrDisabled").checked = (addr.disabled === 'true' || addr.disabled === true);
+    openCrudModal("ipAddressModal");
+};
+
+window.deleteIpAddress = async function(id) {
+    const confirmed = await showConfirm("Apakah Anda yakin ingin menghapus IP address ini?");
+    if (!confirmed) return;
+    try {
+        await apiDelete(`/api/ip-addresses/${encodeURIComponent(id)}`);
+        showToast("IP address berhasil dihapus", "success");
+        await loadIpAddresses();
+    } catch (err) {
+        showToast("Gagal menghapus: " + err.message, "error");
+    }
+};
+
+// ─── Section: IP Isolation ───
+async function loadIpIsolation() {
+    // Load isolated IPs
+    let isolatedIps = [];
+    try {
+        isolatedIps = await apiFetch("/api/isolated-ips");
+    } catch (e) {}
+
+    // Load DHCP data for quick isolate
+    let dhcpData = [];
+    try {
+        dhcpData = await apiFetch("/api/dhcp-leases");
+    } catch (e) {}
+
+    // Render isolated IPs table
+    const isolatedTable = document.getElementById("isolatedTable");
+    const isolatedCount = document.getElementById("isolatedCount");
+
+    if (isolatedCount) isolatedCount.textContent = isolatedIps.length;
+
+    if (isolatedTable) {
+        if (!isolatedIps || isolatedIps.length === 0) {
+            isolatedTable.innerHTML = `<tr><td colspan="3"><div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-text">Tidak ada IP yang diisolasi</div></div></td></tr>`;
+        } else {
+            isolatedTable.innerHTML = isolatedIps
+                .map((ip) => {
+                    return `<tr>
+                        <td><span class="mono">${escapeHtml(ip)}</span></td>
+                        <td><span class="badge badge-isolated">🔒 Isolated</span></td>
+                        <td class="actions-cell">
+                            <button class="btn-action btn-unisolate-action" onclick="quickUnisolate('${escapeHtml(ip)}')">
+                                🔓 Unisolasi
+                            </button>
+                        </td>
+                    </tr>`;
+                })
+                .join("");
+        }
+    }
+
+    // Render DHCP clients for quick isolate
+    const dhcpIsolateTable = document.getElementById("dhcpIsolateTable");
+    if (dhcpIsolateTable) {
+        if (!dhcpData || dhcpData.length === 0) {
+            dhcpIsolateTable.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Tidak ada DHCP client</div></div></td></tr>`;
+        } else {
+            dhcpIsolateTable.innerHTML = dhcpData
+                .map((lease) => {
+                    const isBound = lease.status === "bound";
+                    const badgeClass = isBound ? "badge-bound" : "badge-inactive";
+                    const isIsolated = isolatedIps.includes(lease.address);
+
+                    return `<tr>
+                        <td>${escapeHtml(lease.hostName || "-")}</td>
+                        <td><span class="mono">${escapeHtml(lease.address || "-")}</span></td>
+                        <td>${escapeHtml(lease.macAddress || "-")}</td>
+                        <td>
+                            <span class="badge ${badgeClass}"><span class="badge-dot"></span>${lease.status || "unknown"}</span>
+                            ${isIsolated ? '<span class="badge badge-isolated">🔒</span>' : ''}
+                        </td>
+                        <td class="actions-cell">
+                            ${!isIsolated
+                                ? `<button class="btn-action btn-isolate-action" onclick="quickIsolate('${escapeHtml(lease.address)}')">🔒 Isolasi</button>`
+                                : `<button class="btn-action btn-unisolate-action" onclick="quickUnisolate('${escapeHtml(lease.address)}')">🔓 Unisolasi</button>`
+                            }
+                        </td>
+                    </tr>`;
+                })
+                .join("");
+        }
+    }
+}
+
+function setupIpIsolation() {
+    const form = document.getElementById("quickIsolateForm");
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const ip = document.getElementById("quickIsolateIp").value.trim();
+            if (!ip) return;
+
+            try {
+                await apiPost("/api/isolate-ip", { ip });
+                showToast(`IP ${ip} berhasil diisolasi`, "success");
+                document.getElementById("quickIsolateIp").value = "";
+                await loadIpIsolation();
+            } catch (err) {
+                showToast("Gagal isolasi: " + err.message, "error");
+            }
+        });
+    }
+}
+
 // ─── Nav Badge Update ───
 function updateNavBadge(section, count) {
     const badge = document.querySelector(`.nav-item[data-section="${section}"] .nav-item-badge`);
@@ -823,6 +1462,10 @@ async function init() {
     setupNavigation();
     setupFirewallTabs();
     setupModal();
+    setupDhcpCrud();
+    setupFirewallCrud();
+    setupIpAddressCrud();
+    setupIpIsolation();
 
     // Determine active section based on URL
     const path = window.location.pathname;
@@ -834,6 +1477,8 @@ async function init() {
     else if (path === '/arp') section = 'arp';
     else if (path === '/logs') section = 'logs';
     else if (path === '/hotspot') section = 'hotspot';
+    else if (path === '/ip-addresses') section = 'ip-addresses';
+    else if (path === '/ip-isolation') section = 'ip-isolation';
     
     state.activeSection = section;
 
@@ -853,7 +1498,7 @@ async function init() {
     }
 
     state.intervalId = setInterval(() => {
-        if (!state.isRefreshing) {
+        if (!state.isRefreshing && !state.modalOpen) {
             loadSectionData(state.activeSection);
         }
     }, state.refreshInterval);

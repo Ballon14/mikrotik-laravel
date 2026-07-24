@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use App\Services\MikrotikService;
 
 class MikrotikController extends Controller
 {
@@ -29,12 +30,12 @@ class MikrotikController extends Controller
         ]);
     }
 
-    private function error($message)
+    private function error($message, $code = 500)
     {
         return response()->json([
             'success' => false,
             'error' => $message
-        ], 500);
+        ], $code);
     }
 
     public function health()
@@ -128,5 +129,207 @@ class MikrotikController extends Controller
     {
         $data = Cache::get('mikrotik_data_wireless', []);
         return $this->response($data);
+    }
+
+    // ─── IP Addresses (Read from Cache) ───
+
+    public function ipAddresses()
+    {
+        $data = Cache::get('mikrotik_data_ip_addresses', []);
+        return $this->response($data);
+    }
+
+    // ─── DHCP Lease CRUD ───
+
+    public function storeDhcpLease(Request $request)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->addDhcpLease($request->all());
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function updateDhcpLease(Request $request, $id)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->updateDhcpLease($id, $request->all());
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function destroyDhcpLease($id)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->deleteDhcpLease($id);
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    // ─── Firewall Filter CRUD ───
+
+    public function storeFirewallFilter(Request $request)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->addFirewallFilter($request->all());
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function updateFirewallFilter(Request $request, $id)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->updateFirewallFilter($id, $request->all());
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function destroyFirewallFilter($id)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->deleteFirewallFilter($id);
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    // ─── Firewall NAT CRUD ───
+
+    public function storeFirewallNat(Request $request)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->addFirewallNat($request->all());
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function updateFirewallNat(Request $request, $id)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->updateFirewallNat($id, $request->all());
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function destroyFirewallNat($id)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->deleteFirewallNat($id);
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    // ─── IP Address CRUD ───
+
+    public function storeIpAddress(Request $request)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->addIpAddress($request->all());
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function updateIpAddress(Request $request, $id)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->updateIpAddress($id, $request->all());
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function destroyIpAddress($id)
+    {
+        try {
+            $mikrotik = new MikrotikService();
+            $result = $mikrotik->deleteIpAddress($id);
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    // ─── IP Isolation ───
+
+    public function isolateIp(Request $request)
+    {
+        try {
+            $ip = $request->input('ip');
+            if (empty($ip)) {
+                return $this->error('IP address is required', 422);
+            }
+
+            $mikrotik = new MikrotikService();
+            $mikrotik->isolateIp($ip);
+            return response()->json(['success' => true, 'message' => "IP {$ip} telah diisolasi"]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function unisolateIp(Request $request)
+    {
+        try {
+            $ip = $request->input('ip');
+            if (empty($ip)) {
+                return $this->error('IP address is required', 422);
+            }
+
+            $mikrotik = new MikrotikService();
+            $mikrotik->unisolateIp($ip);
+            return response()->json(['success' => true, 'message' => "IP {$ip} telah diunisolasi"]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function isolatedIps()
+    {
+        try {
+            $data = Cache::get('mikrotik_data_isolated_ips', []);
+            return response()->json(['success' => true, 'data' => $data]);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function hotspotActive()
+    {
+        try {
+            $data = Cache::get('mikrotik_data_hotspot_active', []);
+            return $this->response($data);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
     }
 }

@@ -1,0 +1,83 @@
+@extends('layouts.app')
+
+@section('title', '🌐 IP Addresses')
+
+@section('content')
+<div class="card">
+    <div class="card-header">
+        <h3><span class="icon">🌐</span> IP Addresses</h3>
+        <button class="btn-action btn-add" id="btnAddIpAddress" title="Add IP Address">
+            <span>＋</span> Add IP
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>Network</th>
+                        <th>Interface</th>
+                        <th>Status</th>
+                        <th>Comment</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ipAddressTable">
+                    <tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading...</div></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit IP Address Modal -->
+<div class="crud-modal" id="ipAddressModal">
+    <div class="crud-modal-content">
+        <div class="crud-modal-header">
+            <h3 id="ipAddressModalTitle">Add IP Address</h3>
+            <button class="crud-modal-close" id="ipAddressModalClose">✕</button>
+        </div>
+        <form id="ipAddressForm" class="crud-form">
+            <input type="hidden" id="ipAddressEditId" value="">
+            <div class="form-group">
+                <label for="ipAddrAddress">Address (CIDR)</label>
+                <input type="text" id="ipAddrAddress" name="address" placeholder="192.168.1.1/24" required>
+            </div>
+            <div class="form-group">
+                <label for="ipAddrInterface">Interface</label>
+                <select id="ipAddrInterface" name="interface" required>
+                    <option value="">— Select Interface —</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="ipAddrComment">Comment</label>
+                <input type="text" id="ipAddrComment" name="comment" placeholder="Optional comment">
+            </div>
+            <div class="form-group checkbox-group">
+                <label>
+                    <input type="checkbox" id="ipAddrDisabled" name="disabled">
+                    <span>Disabled</span>
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" id="ipAddressFormCancel">Cancel</button>
+                <button type="submit" class="btn-submit" id="ipAddressFormSubmit">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="confirm-modal" id="confirmModal">
+    <div class="confirm-modal-content">
+        <div class="confirm-icon">⚠️</div>
+        <h3>Konfirmasi Hapus</h3>
+        <p id="confirmMessage">Apakah Anda yakin ingin menghapus item ini?</p>
+        <div class="confirm-actions">
+            <button class="btn-cancel" id="confirmCancel">Batal</button>
+            <button class="btn-delete" id="confirmDelete">Hapus</button>
+        </div>
+    </div>
+</div>
+@endsection
