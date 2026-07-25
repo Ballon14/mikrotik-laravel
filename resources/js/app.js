@@ -290,6 +290,8 @@ function showConfirm(message) {
         deleteBtn.addEventListener("click", onConfirm);
     });
 }
+// Expose globally for billing.js
+window.showConfirm = showConfirm;
 
 // ─── CRUD Modal Helper ───
 function openCrudModal(modalId) {
@@ -813,6 +815,10 @@ function setupDhcpCrud() {
                 'comment': document.getElementById("dhcpComment").value,
             };
 
+            const action = editId ? 'mengupdate' : 'menambahkan';
+            const confirmed = await showConfirm(`Apakah Anda yakin ingin ${action} DHCP lease ini?`);
+            if (!confirmed) return;
+
             try {
                 if (editId) {
                     await apiPut(`/api/dhcp-leases/${encodeURIComponent(editId)}`, data);
@@ -1023,6 +1029,10 @@ function setupFirewallCrud() {
                 'disabled': document.getElementById("filterDisabled").checked ? 'yes' : 'no',
             };
 
+            const action = editId ? 'mengupdate' : 'menambahkan';
+            const confirmed = await showConfirm(`Apakah Anda yakin ingin ${action} filter rule ini?`);
+            if (!confirmed) return;
+
             try {
                 if (editId) {
                     await apiPut(`/api/firewall/filter/${encodeURIComponent(editId)}`, data);
@@ -1073,6 +1083,10 @@ function setupFirewallCrud() {
                 'comment': document.getElementById("natComment").value,
                 'disabled': document.getElementById("natDisabled").checked ? 'yes' : 'no',
             };
+
+            const action = editId ? 'mengupdate' : 'menambahkan';
+            const confirmed = await showConfirm(`Apakah Anda yakin ingin ${action} NAT rule ini?`);
+            if (!confirmed) return;
 
             try {
                 if (editId) {
@@ -1362,6 +1376,10 @@ function setupIpAddressCrud() {
                 'disabled': document.getElementById("ipAddrDisabled").checked ? 'yes' : 'no',
             };
 
+            const action = editId ? 'mengupdate' : 'menambahkan';
+            const confirmed = await showConfirm(`Apakah Anda yakin ingin ${action} IP address ini?`);
+            if (!confirmed) return;
+
             try {
                 if (editId) {
                     await apiPut(`/api/ip-addresses/${encodeURIComponent(editId)}`, data);
@@ -1485,6 +1503,9 @@ function setupIpIsolation() {
             e.preventDefault();
             const ip = document.getElementById("quickIsolateIp").value.trim();
             if (!ip) return;
+
+            const confirmed = await showConfirm(`Isolasi IP ${ip}? Traffic forward akan diblokir.`);
+            if (!confirmed) return;
 
             try {
                 await apiPost("/api/isolate-ip", { ip });

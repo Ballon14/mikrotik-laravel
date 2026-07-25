@@ -135,6 +135,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 speed: document.getElementById('pkgSpeed').value,
                 description: document.getElementById('pkgDesc').value
             };
+
+            const action = id ? 'mengupdate' : 'menambahkan';
+            const confirmed = await window.showConfirm(`Apakah Anda yakin ingin ${action} paket ini?`);
+            if (!confirmed) return;
+
             await saveCrud(id ? `/api/packages/${id}` : '/api/packages', id ? 'PUT' : 'POST', data, () => {
                 modalPackage.classList.remove('active');
                 window.loadPackages();
@@ -168,6 +173,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 package_id: document.getElementById('custPackage').value,
                 status: document.getElementById('custStatus').value
             };
+
+            const action = id ? 'mengupdate' : 'menambahkan';
+            const confirmed = await window.showConfirm(`Apakah Anda yakin ingin ${action} pelanggan ini?`);
+            if (!confirmed) return;
+
             await saveCrud(id ? `/api/customers/${id}` : '/api/customers', id ? 'PUT' : 'POST', data, () => {
                 modalCustomer.classList.remove('active');
                 window.loadCustomers();
@@ -199,6 +209,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 due_date: document.getElementById('invDueDate').value,
                 status: document.getElementById('invStatus').value
             };
+
+            const action = id ? 'mengupdate' : 'menambahkan';
+            const confirmed = await window.showConfirm(`Apakah Anda yakin ingin ${action} tagihan ini?`);
+            if (!confirmed) return;
+
             await saveCrud(id ? `/api/invoices/${id}` : '/api/invoices', id ? 'PUT' : 'POST', data, () => {
                 modalInvoice.classList.remove('active');
                 window.loadInvoices();
