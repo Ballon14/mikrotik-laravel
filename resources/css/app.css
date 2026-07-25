@@ -1994,6 +1994,103 @@ body.modal-open {
     font-family: 'JetBrains Mono', monospace;
 }
 
+/* ─── Daemon Banner ─── */
+.daemon-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    backdrop-filter: blur(12px);
+    animation: fadeSlideIn 0.3s ease;
+}
+
+.daemon-banner-warning {
+    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    color: var(--accent-yellow);
+}
+
+.daemon-banner-error {
+    background: rgba(248, 113, 113, 0.12);
+    border: 1px solid rgba(248, 113, 113, 0.25);
+    color: var(--accent-red);
+}
+
+/* ─── Last Updated ─── */
+.last-updated {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+}
+
+.card-header .last-updated {
+    margin-left: auto;
+}
+
+/* ─── Quick Stats ─── */
+.quick-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.quick-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(56, 189, 248, 0.08);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.quick-stat-item:hover {
+    border-color: rgba(56, 189, 248, 0.2);
+    color: var(--text-primary);
+}
+
+.quick-stat-item span {
+    color: var(--accent-cyan);
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* ─── Stat Card Threshold ─── */
+.stat-card.threshold-danger {
+    border-color: rgba(248, 113, 113, 0.3);
+    box-shadow: 0 0 20px rgba(248, 113, 113, 0.1);
+}
+
+.stat-card.threshold-danger .stat-value {
+    color: var(--accent-red) !important;
+}
+
+.stat-card.threshold-danger::before {
+    background: var(--gradient-red) !important;
+}
+
+.stat-card.threshold-warning {
+    border-color: rgba(251, 191, 36, 0.25);
+}
+
+.stat-card.threshold-warning .stat-value {
+    color: var(--accent-yellow) !important;
+}
+
+.stat-card.threshold-warning::before {
+    background: linear-gradient(135deg, #d97706, #fbbf24) !important;
+}
+
 /* ─── Responsive Fixes ─── */
 @media (max-width: 640px) {
     .form-row {

@@ -387,67 +387,147 @@ document.addEventListener("click", (e) => {
 
 // ─── Section: Overview ───
 async function loadOverview() {
-    const [resource, identity] = await Promise.all([
-        apiFetch("/api/router"),
-        apiFetch("/api/identity"),
-    ]);
+    const bannerEl = document.getElementById("daemonBanner");
+    const bannerText = document.getElementById("daemonBannerText");
 
-    state.data.resource = resource;
-    state.data.identity = identity;
+    try {
+        const [resource, identity, daemonStatus] = await Promise.all([
+            apiFetch("/api/router"),
+            apiFetch("/api/identity"),
+            apiFetch("/api/daemon-status").catch(() => null),
+        ]);
 
-    if (identity && identity.name) {
-        state.routerName = identity.name;
-        const nameEl = document.getElementById("routerNameDisplay");
-        if (nameEl) nameEl.textContent = identity.name;
-        updateConnectionStatus(true);
+        state.data.resource = resource;
+        state.data.identity = identity;
+        state.data.daemonStatus = daemonStatus;
+
+        // Check daemon health
+        const daemonOk = daemonStatus && daemonStatus.status === "ok";
+        if (!daemonOk) {
+            showBanner(bannerEl, "Daemon monitoring tidak merespon. Data mungkin tidak diperbarui.", "warning");
+        } else if (!resource) {
+            showBanner(bannerEl, "Data router tidak tersedia. Pastikan daemon polling berjalan.", "warning");
+        } else {
+            hideBanner(bannerEl);
+        }
+
+        if (identity && identity.name) {
+            state.routerName = identity.name;
+            const nameEl = document.getElementById("routerNameDisplay");
+            if (nameEl) nameEl.textContent = identity.name;
+            updateConnectionStatus(true);
+        }
+
+        if (!resource) {
+            updateLastUpdated();
+            return;
+        }
+
+        // CPU
+        const cpuLoad = Number(resource.cpuLoad) || 0;
+        setStatValue("cpuValue", cpuLoad + "%");
+        setProgressBar("cpuProgress", cpuLoad, cpuLoad > 80 ? "red" : cpuLoad > 50 ? "cyan" : "green");
+        applyStatThreshold("statCardCpu", "cpuValue", cpuLoad, 80, 50);
+
+        // RAM
+        const totalMem = Number(resource.totalMemory || 0);
+        const freeMem = Number(resource.freeMemory || 0);
+        const usedMem = totalMem - freeMem;
+        const ramPercent = totalMem > 0 ? Math.round((usedMem / totalMem) * 100) : 0;
+        setStatValue("ramValue", ramPercent + "%");
+        setStatSub("ramSub", `${formatBytes(usedMem)} / ${formatBytes(totalMem)}`);
+        setProgressBar("ramProgress", ramPercent, ramPercent > 80 ? "red" : ramPercent > 50 ? "cyan" : "green");
+        applyStatThreshold("statCardRam", "ramValue", ramPercent, 80, 50);
+
+        // HDD
+        const totalHdd = Number(resource.totalHddSpace || 0);
+        const freeHdd = Number(resource.freeHddSpace || 0);
+        const usedHdd = totalHdd - freeHdd;
+        const hddPercent = totalHdd > 0 ? Math.round((usedHdd / totalHdd) * 100) : 0;
+        setStatValue("hddValue", hddPercent + "%");
+        setStatSub("hddSub", `${formatBytes(usedHdd)} / ${formatBytes(totalHdd)}`);
+        applyStatThreshold("statCardHdd", "hddValue", hddPercent, 90, 70);
+
+        // Uptime
+        setStatValue("uptimeValue", formatUptime(resource.uptime));
+
+        // System info grid
+        setInfoValue("infoBoardName", resource.boardName || "-");
+        setInfoValue("infoArchitecture", resource.architectureName || "-");
+        setInfoValue("infoVersion", resource.version || "-");
+        setInfoValue("infoCPU", resource.cpu || "-");
+        setInfoValue("infoCPUCount", resource.cpuCount || "-");
+        setInfoValue("infoCPUFreq", resource.cpuFrequency ? resource.cpuFrequency + " MHz" : "-");
+
+        // Quick stats
+        await loadQuickStats();
+
+        // Load traffic charts
+        await loadTrafficCharts(resource);
+
+        updateLastUpdated();
+    } catch (err) {
+        showBanner(bannerEl, "Gagal memuat data: " + err.message, "error");
+        updateConnectionStatus(false, err.message);
     }
+}
 
-    if (!resource) return;
+function applyStatThreshold(cardId, valueId, percent, dangerLevel, warnLevel) {
+    const card = document.getElementById(cardId);
+    const valueEl = document.getElementById(valueId);
+    if (!card || !valueEl) return;
+    // Remove existing threshold classes
+    card.classList.remove("threshold-danger", "threshold-warning");
+    if (percent >= dangerLevel) {
+        card.classList.add("threshold-danger");
+    } else if (percent >= warnLevel) {
+        card.classList.add("threshold-warning");
+    }
+}
 
-    // CPU
-    const cpuLoad = resource.cpuLoad || 0;
-    setStatValue("cpuValue", cpuLoad + "%");
-    setProgressBar("cpuProgress", cpuLoad, cpuLoad > 80 ? "red" : cpuLoad > 50 ? "cyan" : "green");
+function showBanner(el, text, type) {
+    if (!el) return;
+    el.className = `daemon-banner daemon-banner-${type || "warning"}`;
+    el.style.display = "flex";
+    const textEl = document.getElementById("daemonBannerText");
+    if (textEl) textEl.textContent = text;
+}
 
-    // RAM
-    const totalMem = Number(resource.totalMemory || 0);
-    const freeMem = Number(resource.freeMemory || 0);
-    const usedMem = totalMem - freeMem;
-    const ramPercent = totalMem > 0 ? Math.round((usedMem / totalMem) * 100) : 0;
-    setStatValue("ramValue", ramPercent + "%");
-    setStatSub("ramSub", `${formatBytes(usedMem)} / ${formatBytes(totalMem)}`);
-    setProgressBar("ramProgress", ramPercent, ramPercent > 80 ? "red" : ramPercent > 50 ? "cyan" : "green");
+function hideBanner(el) {
+    if (!el) return;
+    el.style.display = "none";
+}
 
-    // HDD
-    const totalHdd = Number(resource.totalHddSpace || 0);
-    const freeHdd = Number(resource.freeHddSpace || 0);
-    const usedHdd = totalHdd - freeHdd;
-    const hddPercent = totalHdd > 0 ? Math.round((usedHdd / totalHdd) * 100) : 0;
-    setStatValue("hddValue", hddPercent + "%");
-    setStatSub("hddSub", `${formatBytes(usedHdd)} / ${formatBytes(totalHdd)}`);
+function updateLastUpdated() {
+    const el = document.getElementById("lastUpdated");
+    if (!el) return;
+    const now = new Date();
+    const time = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    el.textContent = "Diperbarui " + time;
+}
 
-    // Uptime
-    setStatValue("uptimeValue", formatUptime(resource.uptime));
+async function loadQuickStats() {
+    try {
+        const [ifaces, dhcp, arp, routes, fw] = await Promise.all([
+            apiFetch("/api/interfaces").catch(() => ({ data: [] })),
+            apiFetch("/api/dhcp").catch(() => ({ data: [] })),
+            apiFetch("/api/arp").catch(() => ({ data: [] })),
+            apiFetch("/api/routes").catch(() => ({ data: [] })),
+            apiFetch("/api/firewall").catch(() => ({ data: { filter: [], nat: [] } })),
+        ]);
 
-    // System info grid
-    const sysInfo = {
-        boardName: resource.boardName || "-",
-        architecture: resource.architectureName || "-",
-        version: resource.version || "-",
-        cpuModel: resource.cpu || "-",
-        cpuCount: resource.cpuCount || "-",
-        cpuFreq: resource.cpuFrequency ? resource.cpuFrequency + " MHz" : "-",
-    };
+        document.getElementById("qsInterfaces").textContent = (ifaces?.data?.length || 0);
+        document.getElementById("qsDhcp").textContent = (dhcp?.data?.length || 0);
+        document.getElementById("qsArp").textContent = (arp?.data?.length || 0);
+        document.getElementById("qsRoutes").textContent = (routes?.data?.length || 0);
+        const fwCount = (fw?.data?.filter?.length || 0) + (fw?.data?.nat?.length || 0);
+        document.getElementById("qsFirewall").textContent = fwCount;
 
-    setInfoValue("infoBoardName", sysInfo.boardName);
-    setInfoValue("infoArchitecture", sysInfo.architecture);
-    setInfoValue("infoVersion", sysInfo.version);
-    setInfoValue("infoCPU", sysInfo.cpuModel);
-    setInfoValue("infoCPUCount", sysInfo.cpuCount);
-    setInfoValue("infoCPUFreq", sysInfo.cpuFreq);
-
-    // Load traffic charts
-    await loadTrafficCharts();
+        const qs = document.getElementById("quickStats");
+        if (qs) qs.style.display = "flex";
+    } catch (e) {
+        // Silent fail — quick stats are non-critical
+    }
 }
 
 function setStatValue(id, value) {
@@ -476,15 +556,37 @@ function setInfoValue(id, value) {
 // ─── Traffic Charts ───
 const chartCanvases = {};
 
-async function loadTrafficCharts() {
+async function loadTrafficCharts(resource) {
+    // Determine interface names dynamically, with fallback
+    let uplinkName = "ether1-UPLINK-ISP";
+    let bridgeName = "bridge1-DISTRIBUSI-SERVER";
+
+    try {
+        const ifaces = state.data.interfaces || await apiFetch("/api/interfaces").catch(() => null);
+        if (ifaces?.data?.length) {
+            state.data.interfaces = ifaces;
+            // Find first ethernet running interface as uplink
+            const eth = ifaces.data.find(i => i.type === "ether" && i.running === "true");
+            if (eth) uplinkName = eth.name;
+            // Find first bridge
+            const br = ifaces.data.find(i => i.type === "bridge");
+            if (br) bridgeName = br.name;
+        }
+    } catch (e) {
+        // Use fallback names
+    }
+
     try {
         const [uplinkData, bridgeData] = await Promise.all([
-            apiFetch("/api/traffic/ether1-UPLINK-ISP").catch(() => []),
-            apiFetch("/api/traffic/bridge1-DISTRIBUSI-SERVER").catch(() => []),
+            apiFetch(`/api/traffic/${uplinkName}`).catch(() => []),
+            apiFetch(`/api/traffic/${bridgeName}`).catch(() => []),
         ]);
 
-        renderTrafficChart("Uplink", uplinkData, "chartWrapUplink", "chartStatusUplink", "legendRxUplink", "legendTxUplink");
-        renderTrafficChart("Bridge", bridgeData, "chartWrapBridge", "chartStatusBridge", "legendRxBridge", "legendTxBridge");
+        document.getElementById("chartNameUplink").textContent = uplinkName;
+        document.getElementById("chartNameBridge").textContent = bridgeName;
+
+        renderTrafficChart("Uplink", uplinkData, "chartWrapUplink", "chartStatusUplink", "chartWaitUplink", "legendRxUplink", "legendTxUplink");
+        renderTrafficChart("Bridge", bridgeData, "chartWrapBridge", "chartStatusBridge", "chartWaitBridge", "legendRxBridge", "legendTxBridge");
     } catch (err) {
         console.warn("[Charts] Error:", err.message);
     }
@@ -492,9 +594,10 @@ async function loadTrafficCharts() {
 
 const chartResizeObservers = {};
 
-function renderTrafficChart(key, data, wrapId, statusId, rxLegendId, txLegendId) {
+function renderTrafficChart(key, data, wrapId, statusId, waitId, rxLegendId, txLegendId) {
     const wrap = document.getElementById(wrapId);
     const statusEl = document.getElementById(statusId);
+    const waitEl = document.getElementById(waitId);
     const rxLegend = document.getElementById(rxLegendId);
     const txLegend = document.getElementById(txLegendId);
     if (!wrap) return;
@@ -511,11 +614,15 @@ function renderTrafficChart(key, data, wrapId, statusId, rxLegendId, txLegendId)
     }
 
     if (!data || data.length < 2) {
-        // Still collecting
-        if (!wrap.querySelector(".chart-waiting")) {
-            wrap.innerHTML = `<div class="chart-waiting"><div class="dot-pulse"><span></span><span></span><span></span></div>Mengumpulkan data traffic...</div>`;
+        // Still collecting or no data
+        if (waitEl) {
+            if (data && data.length > 0) {
+                waitEl.innerHTML = `<span class="dot-pulse"><span></span><span></span><span></span></span>Mengumpulkan data (${data.length}/2 sample)...`;
+            } else {
+                waitEl.innerHTML = `<i data-lucide="clock" style="width:18px;height:18px;opacity:0.5;"></i><span>Menunggu data traffic...</span>`;
+            }
         }
-        if (statusEl) statusEl.textContent = `${data ? data.length : 0}/2 samples`;
+        if (statusEl) statusEl.textContent = `${data ? data.length : 0}/2 sample`;
         return;
     }
 
