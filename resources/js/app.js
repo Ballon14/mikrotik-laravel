@@ -793,7 +793,11 @@ async function openInterfaceModal(name) {
     modal.classList.add("show");
 
     try {
-        const iface = await apiFetch(`/api/interface/${encodeURIComponent(name)}`);
+        const [iface, trafficData] = await Promise.all([
+            apiFetch(`/api/interface/${encodeURIComponent(name)}`),
+            apiFetch(`/api/traffic/${encodeURIComponent(name)}`).catch(() => []),
+        ]);
+
         if (!iface) {
             bodyEl.innerHTML = `<div class="empty-state"><i data-lucide="alert-circle" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Interface not found</div></div>`;
             return;
@@ -882,6 +886,15 @@ async function openInterfaceModal(name) {
                 </div>
             </div>
 
+            <div class="modal-section-title"><i data-lucide="activity" style="width:14px;height:14px;"></i> Traffic Rate (Riwayat 2 menit)</div>
+            <div class="modal-chart-wrap" id="ifaceChartWrap">
+                <canvas id="ifaceChartCanvas"></canvas>
+            </div>
+            <div class="modal-chart-legend" id="ifaceChartLegend">
+                <span class="modal-chart-legend-item"><span class="legend-dot rx"></span> RX (Download): <strong id="ifaceRxRate">-</strong></span>
+                <span class="modal-chart-legend-item"><span class="legend-dot tx"></span> TX (Upload): <strong id="ifaceTxRate">-</strong></span>
+            </div>
+
             <div class="modal-section-title"><i data-lucide="clock" style="width:14px;height:14px;"></i> Link History</div>
             <div class="modal-stats-row">
                 <div class="modal-stat">
@@ -894,9 +907,114 @@ async function openInterfaceModal(name) {
                 </div>
             </div>
         `;
+
+        lucide.createIcons();
+
+        // Render traffic chart after DOM is ready
+        if (trafficData && trafficData.length >= 2) {
+            renderIfaceChart(trafficData);
+        } else {
+            const legend = document.getElementById("ifaceChartLegend");
+            if (legend) legend.style.display = "none";
+            const wrap = document.getElementById("ifaceChartWrap");
+            if (wrap) {
+                wrap.innerHTML = `<div class="modal-chart-empty"><i data-lucide="clock" style="width:18px;height:18px;opacity:0.5;"></i><span>Belum cukup data traffic (${trafficData ? trafficData.length : 0}/2 sample)</span></div>`;
+                lucide.createIcons();
+            }
+        }
     } catch (err) {
         bodyEl.innerHTML = `<div class="empty-state"><i data-lucide="alert-circle" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">${escapeHtml(err.message)}</div></div>`;
     }
+}
+
+function renderIfaceChart(data) {
+    const canvas = document.getElementById("ifaceChartCanvas");
+    if (!canvas) return;
+
+    data = data.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
+
+    const wrap = canvas.parentElement;
+    const rect = wrap.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    const W = rect.width;
+    const H = rect.height;
+    const PAD = { top: 10, right: 10, bottom: 24, left: 55 };
+    const cw = W - PAD.left - PAD.right;
+    const ch = H - PAD.top - PAD.bottom;
+
+    ctx.clearRect(0, 0, W, H);
+
+    let maxVal = 0;
+    data.forEach(d => { maxVal = Math.max(maxVal, d.rxRate || 0, d.txRate || 0); });
+    maxVal = Math.max(maxVal, 1024) * 1.15;
+
+    // Grid
+    ctx.strokeStyle = "rgba(56, 189, 248, 0.07)";
+    ctx.lineWidth = 1;
+    ctx.font = "10px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "rgba(100, 116, 139, 0.7)";
+    ctx.textAlign = "right";
+    const gridLines = 4;
+    for (let i = 0; i <= gridLines; i++) {
+        const y = PAD.top + (ch / gridLines) * i;
+        const val = maxVal - (maxVal / gridLines) * i;
+        ctx.beginPath();
+        ctx.moveTo(PAD.left, y);
+        ctx.lineTo(W - PAD.right, y);
+        ctx.stroke();
+        ctx.fillText(formatSpeed(val * 8), PAD.left - 5, y + 3);
+    }
+
+    function drawLine(points, key, color, fillColor) {
+        if (points.length < 2) return;
+        const step = cw / (points.length - 1);
+        ctx.beginPath();
+        points.forEach((p, i) => {
+            const x = PAD.left + i * step;
+            const val = p[key] || 0;
+            const y = PAD.top + ch - (val / maxVal) * ch;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.lineJoin = "round";
+        ctx.stroke();
+
+        const lastX = PAD.left + (points.length - 1) * step;
+        ctx.lineTo(lastX, PAD.top + ch);
+        ctx.lineTo(PAD.left, PAD.top + ch);
+        ctx.closePath();
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+    }
+
+    drawLine(data, "rxRate", "#22d3ee", "rgba(34, 211, 238, 0.08)");
+    drawLine(data, "txRate", "#34d399", "rgba(52, 211, 153, 0.08)");
+
+    // Time labels
+    ctx.fillStyle = "rgba(100, 116, 139, 0.5)";
+    ctx.textAlign = "center";
+    ctx.font = "9px 'JetBrains Mono', monospace";
+    const timeY = H - 4;
+    const oldest = new Date(data[0].ts);
+    const newest = new Date(data[data.length - 1].ts);
+    const fmt = (d) => d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    ctx.fillText(fmt(oldest), PAD.left, timeY);
+    ctx.fillText(fmt(newest), W - PAD.right, timeY);
+
+    // Update legend
+    const last = data[data.length - 1];
+    const rxEl = document.getElementById("ifaceRxRate");
+    const txEl = document.getElementById("ifaceTxRate");
+    if (rxEl) rxEl.textContent = formatSpeed(last.rxRate * 8);
+    if (txEl) txEl.textContent = formatSpeed(last.txRate * 8);
 }
 
 function closeInterfaceModal() {
