@@ -134,23 +134,66 @@ function percentUsed(free, total) {
 
 // ─── Navigation ───
 function setupNavigation() {
-    // Mobile toggle
+    const sidebar = document.getElementById("sidebar");
     const toggle = document.getElementById("mobileToggle");
     const overlay = document.getElementById("mobileOverlay");
+
     if (toggle) {
         toggle.addEventListener("click", () => {
-            document.getElementById("sidebar").classList.toggle("open");
+            sidebar.classList.toggle("open");
             overlay.classList.toggle("active");
+            document.body.classList.toggle("sidebar-open");
         });
     }
     if (overlay) {
         overlay.addEventListener("click", closeMobileSidebar);
     }
+
+    // Swipe to close sidebar on mobile
+    let touchStartX = 0;
+    let touchEndX = 0;
+    document.addEventListener("touchstart", (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    document.addEventListener("touchend", (e) => {
+        if (!sidebar.classList.contains("open")) return;
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (diff > 80) {
+            closeMobileSidebar();
+        }
+    }, { passive: true });
 }
 
 function closeMobileSidebar() {
-    document.getElementById("sidebar").classList.remove("open");
-    document.getElementById("mobileOverlay").classList.remove("active");
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("mobileOverlay");
+    if (sidebar) sidebar.classList.remove("open");
+    if (overlay) overlay.classList.remove("active");
+    document.body.classList.remove("sidebar-open");
+}
+
+// ─── Table Scroll Detection ───
+function setupTableScrollHints() {
+    document.querySelectorAll('.data-table-wrapper').forEach(wrapper => {
+        const checkScroll = () => {
+            const hasScroll = wrapper.scrollWidth > wrapper.clientWidth;
+            wrapper.classList.toggle('scrollable', hasScroll);
+        };
+        checkScroll();
+        // Add scroll hint element
+        if (!wrapper.querySelector('.scroll-hint')) {
+            const hint = document.createElement('div');
+            hint.className = 'scroll-hint';
+            hint.innerHTML = '&#8594; Geser untuk lihat lebih banyak';
+            wrapper.after(hint);
+        }
+        // Recheck on resize
+        window.addEventListener('resize', checkScroll);
+        // Also check after content loads
+        const observer = new MutationObserver(checkScroll);
+        observer.observe(wrapper, { childList: true, subtree: true });
+    });
 }
 
 // ─── Data Loading ───
@@ -299,6 +342,7 @@ function openCrudModal(modalId) {
     if (modal) {
         modal.classList.add("show");
         state.modalOpen = true;
+        document.body.classList.add("modal-open");
     }
 }
 
@@ -307,8 +351,18 @@ function closeCrudModal(modalId) {
     if (modal) {
         modal.classList.remove("show");
         state.modalOpen = false;
+        document.body.classList.remove("modal-open");
     }
 }
+
+// Close modals via backdrop click
+document.addEventListener("click", (e) => {
+    if (e.target.classList.contains("crud-modal") || e.target.classList.contains("confirm-modal")) {
+        e.target.classList.remove("show", "active");
+        state.modalOpen = false;
+        document.body.classList.remove("modal-open");
+    }
+});
 
 // ─── Section: Overview ───
 async function loadOverview() {
@@ -415,12 +469,25 @@ async function loadTrafficCharts() {
     }
 }
 
+const chartResizeObservers = {};
+
 function renderTrafficChart(key, data, wrapId, statusId, rxLegendId, txLegendId) {
     const wrap = document.getElementById(wrapId);
     const statusEl = document.getElementById(statusId);
     const rxLegend = document.getElementById(rxLegendId);
     const txLegend = document.getElementById(txLegendId);
     if (!wrap) return;
+
+    // ResizeObserver for chart canvas re-render on orientation change
+    if (!chartResizeObservers[key] && typeof ResizeObserver !== 'undefined') {
+        chartResizeObservers[key] = new ResizeObserver(() => {
+            const canvas = chartCanvases[key];
+            if (canvas && canvas.isConnected) {
+                delete chartCanvases[key];
+            }
+        });
+        chartResizeObservers[key].observe(wrap);
+    }
 
     if (!data || data.length < 2) {
         // Still collecting
@@ -1528,6 +1595,7 @@ function updateNavBadge(section, count) {
 // ─── Initialization ───
 async function init() {
     setupNavigation();
+    setupTableScrollHints();
     setupFirewallTabs();
     setupModal();
     setupDhcpCrud();
