@@ -437,12 +437,14 @@ class MikrotikService
     {
         $comment = self::ISOLATE_COMMENT_PREFIX.$ip;
 
-        // Find all rules with the isolation comment
-        $rules = $this->query('/ip/firewall/filter/print', ['?comment' => $comment]);
+        // Fetch ALL filter rules, then filter by comment in PHP
+        // (RouterOS API ?comment filter is unreliable across versions)
+        $rules = $this->query('/ip/firewall/filter/print');
 
         if (is_array($rules)) {
             foreach ($rules as $rule) {
-                if (isset($rule['.id'])) {
+                $ruleComment = $rule['comment'] ?? '';
+                if ($ruleComment === $comment && isset($rule['.id'])) {
                     $this->execute('/ip/firewall/filter/remove', ['.id' => $rule['.id']]);
                 }
             }
