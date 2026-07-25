@@ -461,6 +461,36 @@ html {
     font-family: 'JetBrains Mono', monospace;
 }
 
+.header-billing-shortcut {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(250, 204, 21, 0.1);
+    color: var(--accent-yellow);
+    border: 1px solid rgba(250, 204, 21, 0.2);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.header-billing-shortcut:hover {
+    background: rgba(250, 204, 21, 0.2);
+    border-color: rgba(250, 204, 21, 0.4);
+}
+
+.shortcut-label {
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.shortcut-value {
+    color: var(--accent-yellow);
+    font-weight: 600;
+}
+
 /* ─── Section Panels (page views) ─── */
 .section-panel {
     display: none;

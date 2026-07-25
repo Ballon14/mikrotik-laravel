@@ -21,6 +21,9 @@ Route::middleware('auth')->group(function () {
 
     // View Routes
     Route::get('/', function () {
+        return view('pages.billing.dashboard');
+    });
+    Route::get('/monitoring', function () {
         return view('pages.overview');
     });
     Route::get('/interfaces', function () {

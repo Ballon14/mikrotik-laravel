@@ -4,7 +4,7 @@
             <div class="sidebar-logo-icon"><i data-lucide="radio" style="width:22px;height:22px;stroke-width:2.5;"></i></div>
             <div class="sidebar-logo-text">
                 <h1>MikroTik</h1>
-                <span>Dashboard Monitor</span>
+                <span>Billing & Monitor</span>
             </div>
         </div>
     </div>
@@ -30,9 +30,51 @@
     @endphp
 
     <nav class="sidebar-nav">
+        <div class="nav-section-title">Billing System</div>
+
+        <a href="/" class="nav-item {{ request()->is('/') ? 'active' : '' }}" data-section="billing-dashboard">
+            <i data-lucide="bar-chart-3" class="nav-item-icon"></i>
+            <span>Billing Dashboard</span>
+        </a>
+
+        <a href="/packages" class="nav-item {{ request()->is('packages') ? 'active' : '' }}" data-section="packages">
+            <i data-lucide="credit-card" class="nav-item-icon"></i>
+            <span>Packages</span>
+        </a>
+
+        <a href="/customers" class="nav-item {{ request()->is('customers') ? 'active' : '' }}" data-section="customers">
+            <i data-lucide="users" class="nav-item-icon"></i>
+            <span>Customers</span>
+        </a>
+
+        <a href="/invoices" class="nav-item {{ request()->is('invoices') ? 'active' : '' }}" data-section="invoices">
+            <i data-lucide="receipt" class="nav-item-icon"></i>
+            <span>Invoices</span>
+        </a>
+
+        <a href="/payments" class="nav-item {{ request()->is('payments') ? 'active' : '' }}" data-section="payments">
+            <i data-lucide="wallet" class="nav-item-icon"></i>
+            <span>Payments</span>
+        </a>
+
+        <a href="/pppoe-accounts" class="nav-item {{ request()->is('pppoe-accounts') ? 'active' : '' }}" data-section="pppoe-accounts">
+            <i data-lucide="cable" class="nav-item-icon"></i>
+            <span>PPPoE Accounts</span>
+        </a>
+
+        <a href="/routers" class="nav-item {{ request()->is('routers') ? 'active' : '' }}" data-section="routers">
+            <i data-lucide="server" class="nav-item-icon"></i>
+            <span>Routers</span>
+        </a>
+
+        <a href="/audit-logs" class="nav-item {{ request()->is('audit-logs') ? 'active' : '' }}" data-section="audit-logs">
+            <i data-lucide="scroll-text" class="nav-item-icon"></i>
+            <span>Audit Logs</span>
+        </a>
+
         <div class="nav-section-title">Monitoring</div>
 
-        <a href="/" class="nav-item {{ request()->is('/') ? 'active' : '' }}">
+        <a href="/monitoring" class="nav-item {{ request()->is('monitoring') ? 'active' : '' }}">
             <i data-lucide="layout-dashboard" class="nav-item-icon"></i>
             <span>System Overview</span>
         </a>
@@ -93,48 +135,6 @@
         <a href="/logs" class="nav-item {{ request()->is('logs') ? 'active' : '' }}" data-section="logs">
             <i data-lucide="file-text" class="nav-item-icon"></i>
             <span>System Logs</span>
-        </a>
-
-        <div class="nav-section-title">Billing System</div>
-
-        <a href="/billing-dashboard" class="nav-item {{ request()->is('billing-dashboard') ? 'active' : '' }}" data-section="billing-dashboard">
-            <i data-lucide="bar-chart-3" class="nav-item-icon"></i>
-            <span>Billing Dashboard</span>
-        </a>
-
-        <a href="/packages" class="nav-item {{ request()->is('packages') ? 'active' : '' }}" data-section="packages">
-            <i data-lucide="credit-card" class="nav-item-icon"></i>
-            <span>Packages</span>
-        </a>
-
-        <a href="/customers" class="nav-item {{ request()->is('customers') ? 'active' : '' }}" data-section="customers">
-            <i data-lucide="users" class="nav-item-icon"></i>
-            <span>Customers</span>
-        </a>
-
-        <a href="/invoices" class="nav-item {{ request()->is('invoices') ? 'active' : '' }}" data-section="invoices">
-            <i data-lucide="receipt" class="nav-item-icon"></i>
-            <span>Invoices</span>
-        </a>
-
-        <a href="/payments" class="nav-item {{ request()->is('payments') ? 'active' : '' }}" data-section="payments">
-            <i data-lucide="wallet" class="nav-item-icon"></i>
-            <span>Payments</span>
-        </a>
-
-        <a href="/pppoe-accounts" class="nav-item {{ request()->is('pppoe-accounts') ? 'active' : '' }}" data-section="pppoe-accounts">
-            <i data-lucide="cable" class="nav-item-icon"></i>
-            <span>PPPoE Accounts</span>
-        </a>
-
-        <a href="/routers" class="nav-item {{ request()->is('routers') ? 'active' : '' }}" data-section="routers">
-            <i data-lucide="server" class="nav-item-icon"></i>
-            <span>Routers</span>
-        </a>
-
-        <a href="/audit-logs" class="nav-item {{ request()->is('audit-logs') ? 'active' : '' }}" data-section="audit-logs">
-            <i data-lucide="scroll-text" class="nav-item-icon"></i>
-            <span>Audit Logs</span>
         </a>
     </nav>
 

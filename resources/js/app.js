@@ -1538,7 +1538,8 @@ async function init() {
     // Determine active section based on URL
     const path = window.location.pathname;
     let section = 'overview';
-    if (path === '/interfaces') section = 'interfaces';
+    if (path === '/monitoring' || path === '/') section = 'overview';
+    else if (path === '/interfaces') section = 'interfaces';
     else if (path === '/dhcp') section = 'dhcp';
     else if (path === '/routes') section = 'routes';
     else if (path === '/firewall') section = 'firewall';
@@ -1571,5 +1572,29 @@ async function init() {
         }
     }, state.refreshInterval);
 }
+
+// ─── Header Billing Shortcut ───
+async function loadBillingShortcut() {
+    const el = document.getElementById('headerBillingShortcut');
+    if (!el) return;
+    try {
+        const res = await fetch('/api/billing/dashboard');
+        const json = await res.json();
+        if (json.success) {
+            document.getElementById('shortcutActive').textContent = json.data.activeCustomers ?? '-';
+            const rev = Number(json.data.monthlyRevenue || 0);
+            document.getElementById('shortcutRevenue').textContent = 'Rp' + rev.toLocaleString('id-ID');
+            el.style.display = 'flex';
+        }
+    } catch (e) {
+        // silently fail — daemon/router might not be connected
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadBillingShortcut();
+    // Refresh billing shortcut every 30s
+    setInterval(loadBillingShortcut, 30000);
+});
 
 document.addEventListener("DOMContentLoaded", init);
