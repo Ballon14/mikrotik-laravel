@@ -16,15 +16,27 @@ class Invoice extends Model
         'status',
         'due_date',
         'paid_at',
+        'period_start',
+        'period_end',
     ];
 
-    protected $casts = [
-        'due_date' => 'date',
-        'paid_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'due_date' => 'date',
+            'paid_at' => 'datetime',
+            'period_start' => 'date',
+            'period_end' => 'date',
+        ];
+    }
 
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
     }
 }

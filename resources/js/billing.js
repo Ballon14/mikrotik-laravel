@@ -335,3 +335,290 @@ async function saveCrud(url, method, data, callback) {
         showToast('Error jaringan', 'error');
     }
 }
+
+// ─── Payments ───
+
+window.loadPayments = async function() {
+    try {
+        const res = await fetch('/api/payments');
+        const json = await res.json();
+        const tbody = document.getElementById('paymentsTable');
+        if (!tbody) return;
+
+        if (!json.success || json.data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada pembayaran</div></div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = json.data.map(p => `
+            <tr>
+                <td>${p.id}</td>
+                <td>${p.invoice ? esc(p.invoice.invoice_number) : '-'}</td>
+                <td>${p.invoice?.customer?.name || '-'}</td>
+                <td>Rp ${Number(p.amount).toLocaleString('id-ID')}</td>
+                <td>${esc(p.payment_method || '-')}</td>
+                <td>${esc(p.reference || '-')}</td>
+                <td>${p.paid_at ? new Date(p.paid_at).toLocaleString('id-ID') : '-'}</td>
+                <td><button class="btn-delete" onclick="deletePayment(${p.id})">Hapus</button></td>
+            </tr>
+        `).join('');
+        lucide.createIcons();
+    } catch(e) { console.error(e); }
+};
+
+window.loadInvoiceOptions = async function() {
+    const res = await fetch('/api/invoices');
+    const json = await res.json();
+    const sel = document.getElementById('payInvoice');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Pilih Invoice —</option>' + json.data.map(i => `<option value="${i.id}">${i.invoice_number} - ${i.customer?.name || '-'} (Rp ${Number(i.amount).toLocaleString('id-ID')})</option>`).join('');
+};
+
+window.deletePayment = function(id) { confirmDeleteAction('payments', id, window.loadPayments); };
+
+// ─── Routers ───
+
+window.loadRouters = async function() {
+    try {
+        const res = await fetch('/api/routers');
+        const json = await res.json();
+        const tbody = document.getElementById('routersTable');
+        if (!tbody) return;
+
+        if (!json.success || json.data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada router</div></div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = json.data.map(r => `
+            <tr>
+                <td>${r.id}</td>
+                <td><strong>${esc(r.name)}</strong></td>
+                <td>${esc(r.host)}</td>
+                <td>${r.port}</td>
+                <td>${esc(r.username)}</td>
+                <td>${r.is_active ? '<span class="status-badge success">Aktif</span>' : '<span class="status-badge warning">Nonaktif</span>'}</td>
+                <td>
+                    <button class="btn-edit" onclick="editRouter(${r.id})">Edit</button>
+                    <button class="btn-delete" onclick="deleteRouter(${r.id})">Hapus</button>
+                </td>
+            </tr>
+        `).join('');
+        lucide.createIcons();
+    } catch(e) { console.error(e); }
+};
+
+window.editRouter = async function(id) {
+    const res = await fetch('/api/routers');
+    const json = await res.json();
+    const r = json.data.find(x => x.id == id);
+    if (!r) return;
+    document.getElementById('routerEditId').value = r.id;
+    document.getElementById('rtrName').value = r.name;
+    document.getElementById('rtrHost').value = r.host;
+    document.getElementById('rtrPort').value = r.port;
+    document.getElementById('rtrUser').value = r.username;
+    document.getElementById('rtrPass').value = '';
+    document.getElementById('rtrActive').checked = r.is_active;
+    document.getElementById('routerModalTitle').textContent = 'Edit Router';
+    document.getElementById('routerModal').classList.add('active');
+};
+
+window.deleteRouter = function(id) { confirmDeleteAction('routers', id, window.loadRouters); };
+
+// ─── PPPoE Accounts ───
+
+window.loadPppoeAccounts = async function() {
+    try {
+        const res = await fetch('/api/pppoe-accounts');
+        const json = await res.json();
+        const tbody = document.getElementById('pppoeTable');
+        if (!tbody) return;
+
+        if (!json.success || json.data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada akun PPPoE</div></div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = json.data.map(a => {
+            const statusBadge = a.disabled
+                ? '<span class="status-badge warning">Nonaktif</span>'
+                : '<span class="status-badge success">Aktif</span>';
+            const syncBadge = a.last_sync_at
+                ? '<span class="status-badge success">Tersinkron</span>'
+                : '<span class="status-badge warning">Belum sync</span>';
+            return `
+            <tr>
+                <td>${a.id}</td>
+                <td><strong>${esc(a.username)}</strong></td>
+                <td>${a.customer ? esc(a.customer.name) : '-'}</td>
+                <td>${a.router ? esc(a.router.name) : '-'}</td>
+                <td>${esc(a.profile || '-')}</td>
+                <td>${esc(a.ip_address || '-')}</td>
+                <td>${statusBadge}</td>
+                <td>${syncBadge}</td>
+                <td>
+                    <button class="btn-edit" onclick="editPppoe(${a.id})">Edit</button>
+                    <button class="btn-delete" onclick="deletePppoe(${a.id})">Hapus</button>
+                    <button class="btn-action" onclick="syncPppoe(${a.id})" title="Sync ke Router">Sync</button>
+                </td>
+            </tr>
+            `;
+        }).join('');
+        lucide.createIcons();
+    } catch(e) { console.error(e); }
+};
+
+window.editPppoe = async function(id) {
+    const res = await fetch('/api/pppoe-accounts');
+    const json = await res.json();
+    const a = json.data.find(x => x.id == id);
+    if (!a) return;
+    await loadCustomerOptions();
+    await loadRouterOptions();
+    document.getElementById('pppoeEditId').value = a.id;
+    document.getElementById('pppCustomer').value = a.customer_id;
+    document.getElementById('pppRouter').value = a.router_id || '';
+    document.getElementById('pppUser').value = a.username;
+    document.getElementById('pppPass').value = a.password;
+    document.getElementById('pppProfile').value = a.profile || '';
+    document.getElementById('pppIp').value = a.ip_address || '';
+    document.getElementById('pppDisabled').checked = a.disabled;
+    document.getElementById('pppoeModalTitle').textContent = 'Edit Akun PPPoE';
+    document.getElementById('pppoeModal').classList.add('active');
+};
+
+window.syncPppoe = async function(id) {
+    try {
+        const res = await fetch(`/api/pppoe-accounts/${id}/sync`, { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') } });
+        const json = await res.json();
+        if (json.success) {
+            showToast('Sync ditambahkan ke antrian', 'success');
+            window.loadPppoeAccounts();
+        }
+    } catch(e) { showToast('Gagal sync', 'error'); }
+};
+
+window.deletePppoe = function(id) { confirmDeleteAction('pppoe-accounts', id, window.loadPppoeAccounts); };
+
+async function loadRouterOptions() {
+    const res = await fetch('/api/routers');
+    const json = await res.json();
+    const sel = document.getElementById('pppRouter');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Pilih Router —</option>' + json.data.map(r => `<option value="${r.id}">${r.name} (${r.host})</option>`).join('');
+}
+
+// ─── Page-specific DOM initializers ───
+
+// Payments page
+document.addEventListener('DOMContentLoaded', () => {
+    const btnAddPayment = document.getElementById('btnAddPayment');
+    const modalPayment = document.getElementById('paymentModal');
+    if (btnAddPayment) {
+        btnAddPayment.addEventListener('click', async () => {
+            document.getElementById('paymentForm').reset();
+            await loadInvoiceOptions();
+            modalPayment.classList.add('active');
+        });
+        document.getElementById('paymentModalClose').addEventListener('click', () => modalPayment.classList.remove('active'));
+        document.getElementById('paymentFormCancel').addEventListener('click', () => modalPayment.classList.remove('active'));
+
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                invoice_id: document.getElementById('payInvoice').value,
+                amount: document.getElementById('payAmount').value,
+                payment_method: document.getElementById('payMethod').value,
+                reference: document.getElementById('payReference').value,
+                notes: document.getElementById('payNotes').value,
+            };
+            const confirmed = await window.showConfirm('Apakah Anda yakin ingin mencatat pembayaran ini?');
+            if (!confirmed) return;
+            await saveCrud('/api/payments', 'POST', data, () => {
+                modalPayment.classList.remove('active');
+                window.loadPayments();
+            });
+        });
+    }
+
+    // Routers page
+    const btnAddRouter = document.getElementById('btnAddRouter');
+    const modalRouter = document.getElementById('routerModal');
+    if (btnAddRouter) {
+        btnAddRouter.addEventListener('click', () => {
+            document.getElementById('routerForm').reset();
+            document.getElementById('routerEditId').value = '';
+            document.getElementById('routerModalTitle').textContent = 'Tambah Router';
+            modalRouter.classList.add('active');
+        });
+        document.getElementById('routerModalClose').addEventListener('click', () => modalRouter.classList.remove('active'));
+        document.getElementById('routerFormCancel').addEventListener('click', () => modalRouter.classList.remove('active'));
+
+        document.getElementById('routerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('routerEditId').value;
+            const data = {
+                name: document.getElementById('rtrName').value,
+                host: document.getElementById('rtrHost').value,
+                port: document.getElementById('rtrPort').value || 8728,
+                username: document.getElementById('rtrUser').value,
+                password: document.getElementById('rtrPass').value,
+                is_active: document.getElementById('rtrActive').checked,
+            };
+
+            if (!data.password && id) delete data.password;
+
+            const action = id ? 'mengupdate' : 'menambahkan';
+            const confirmed = await window.showConfirm(`Apakah Anda yakin ingin ${action} router ini?`);
+            if (!confirmed) return;
+
+            await saveCrud(id ? `/api/routers/${id}` : '/api/routers', id ? 'PUT' : 'POST', data, () => {
+                modalRouter.classList.remove('active');
+                window.loadRouters();
+            });
+        });
+    }
+
+    // PPPoE Accounts page
+    const btnAddPppoe = document.getElementById('btnAddPppoe');
+    const modalPppoe = document.getElementById('pppoeModal');
+    if (btnAddPppoe) {
+        btnAddPppoe.addEventListener('click', async () => {
+            document.getElementById('pppoeForm').reset();
+            document.getElementById('pppoeEditId').value = '';
+            document.getElementById('pppoeModalTitle').textContent = 'Tambah Akun PPPoE';
+            await loadCustomerOptions();
+            await loadRouterOptions();
+            modalPppoe.classList.add('active');
+        });
+        document.getElementById('pppoeModalClose').addEventListener('click', () => modalPppoe.classList.remove('active'));
+        document.getElementById('pppoeFormCancel').addEventListener('click', () => modalPppoe.classList.remove('active'));
+
+        document.getElementById('pppoeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('pppoeEditId').value;
+            const data = {
+                customer_id: document.getElementById('pppCustomer').value,
+                router_id: document.getElementById('pppRouter').value || null,
+                username: document.getElementById('pppUser').value,
+                password: document.getElementById('pppPass').value,
+                profile: document.getElementById('pppProfile').value || null,
+                ip_address: document.getElementById('pppIp').value || null,
+                disabled: document.getElementById('pppDisabled').checked,
+            };
+            const action = id ? 'mengupdate' : 'menambahkan';
+            const confirmed = await window.showConfirm(`Apakah Anda yakin ingin ${action} akun PPPoE ini?`);
+            if (!confirmed) return;
+            await saveCrud(id ? `/api/pppoe-accounts/${id}` : '/api/pppoe-accounts', id ? 'PUT' : 'POST', data, () => {
+                modalPppoe.classList.remove('active');
+                window.loadPppoeAccounts();
+            });
+        });
+    }
+
+    // Page-specific loaders
+    if (document.getElementById('paymentsTable')) window.loadPayments();
+    if (document.getElementById('routersTable')) window.loadRouters();
+    if (document.getElementById('pppoeTable')) window.loadPppoeAccounts();
+});

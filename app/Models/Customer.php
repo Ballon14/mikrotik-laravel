@@ -11,7 +11,9 @@ class Customer extends Model
 
     protected $fillable = [
         'name',
+        'nik',
         'phone',
+        'email',
         'address',
         'pppoe_username',
         'pppoe_password',
@@ -27,5 +29,15 @@ class Customer extends Model
     public function invoices()
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function pppoeAccounts()
+    {
+        return $this->hasMany(PppoeAccount::class);
+    }
+
+    public function latestInvoice()
+    {
+        return $this->hasOne(Invoice::class)->latestOfMany();
     }
 }

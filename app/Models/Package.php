@@ -14,7 +14,15 @@ class Package extends Model
         'price',
         'speed',
         'description',
+        'billing_period',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'price' => 'decimal:2',
+        ];
+    }
 
     public function customers()
     {

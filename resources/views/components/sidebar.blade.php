@@ -97,6 +97,11 @@
 
         <div class="nav-section-title">Billing System</div>
 
+        <a href="/billing-dashboard" class="nav-item {{ request()->is('billing-dashboard') ? 'active' : '' }}" data-section="billing-dashboard">
+            <i data-lucide="bar-chart-3" class="nav-item-icon"></i>
+            <span>Billing Dashboard</span>
+        </a>
+
         <a href="/packages" class="nav-item {{ request()->is('packages') ? 'active' : '' }}" data-section="packages">
             <i data-lucide="credit-card" class="nav-item-icon"></i>
             <span>Packages</span>
@@ -110,6 +115,26 @@
         <a href="/invoices" class="nav-item {{ request()->is('invoices') ? 'active' : '' }}" data-section="invoices">
             <i data-lucide="receipt" class="nav-item-icon"></i>
             <span>Invoices</span>
+        </a>
+
+        <a href="/payments" class="nav-item {{ request()->is('payments') ? 'active' : '' }}" data-section="payments">
+            <i data-lucide="wallet" class="nav-item-icon"></i>
+            <span>Payments</span>
+        </a>
+
+        <a href="/pppoe-accounts" class="nav-item {{ request()->is('pppoe-accounts') ? 'active' : '' }}" data-section="pppoe-accounts">
+            <i data-lucide="cable" class="nav-item-icon"></i>
+            <span>PPPoE Accounts</span>
+        </a>
+
+        <a href="/routers" class="nav-item {{ request()->is('routers') ? 'active' : '' }}" data-section="routers">
+            <i data-lucide="server" class="nav-item-icon"></i>
+            <span>Routers</span>
+        </a>
+
+        <a href="/audit-logs" class="nav-item {{ request()->is('audit-logs') ? 'active' : '' }}" data-section="audit-logs">
+            <i data-lucide="scroll-text" class="nav-item-icon"></i>
+            <span>Audit Logs</span>
         </a>
     </nav>
 

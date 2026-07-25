@@ -61,6 +61,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoices', function () {
         return view('pages.billing.invoices');
     });
+    Route::get('/payments', function () {
+        return view('pages.billing.payments');
+    });
+    Route::get('/routers', function () {
+        return view('pages.billing.routers');
+    });
+    Route::get('/pppoe-accounts', function () {
+        return view('pages.billing.pppoe-accounts');
+    });
+    Route::get('/audit-logs', function () {
+        return view('pages.billing.audit-logs');
+    });
+    Route::get('/billing-dashboard', function () {
+        return view('pages.billing.dashboard');
+    });
 
     // API Routes
     Route::prefix('api')->group(function () {
@@ -107,6 +122,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/unisolate-ip', [MikrotikController::class, 'unisolateIp']);
 
         // ─── Billing API ───
+        Route::get('/billing/dashboard', [BillingController::class, 'dashboard']);
+
         Route::get('/packages', [BillingController::class, 'packages']);
         Route::post('/packages', [BillingController::class, 'storePackage']);
         Route::put('/packages/{id}', [BillingController::class, 'updatePackage']);
@@ -121,5 +138,26 @@ Route::middleware('auth')->group(function () {
         Route::post('/invoices', [BillingController::class, 'storeInvoice']);
         Route::put('/invoices/{id}', [BillingController::class, 'updateInvoice']);
         Route::delete('/invoices/{id}', [BillingController::class, 'destroyInvoice']);
+
+        // ─── Payments ───
+        Route::get('/payments', [BillingController::class, 'payments']);
+        Route::post('/payments', [BillingController::class, 'storePayment']);
+        Route::delete('/payments/{id}', [BillingController::class, 'destroyPayment']);
+
+        // ─── Routers ───
+        Route::get('/routers', [BillingController::class, 'routers']);
+        Route::post('/routers', [BillingController::class, 'storeRouter']);
+        Route::put('/routers/{id}', [BillingController::class, 'updateRouter']);
+        Route::delete('/routers/{id}', [BillingController::class, 'destroyRouter']);
+
+        // ─── PPPoE Accounts ───
+        Route::get('/pppoe-accounts', [BillingController::class, 'pppoeAccounts']);
+        Route::post('/pppoe-accounts', [BillingController::class, 'storePppoeAccount']);
+        Route::put('/pppoe-accounts/{id}', [BillingController::class, 'updatePppoeAccount']);
+        Route::delete('/pppoe-accounts/{id}', [BillingController::class, 'destroyPppoeAccount']);
+        Route::post('/pppoe-accounts/{id}/sync', [BillingController::class, 'syncPppoeAccount']);
+
+        // ─── Audit Logs ───
+        Route::get('/audit-logs', [BillingController::class, 'auditLogs']);
     });
 });

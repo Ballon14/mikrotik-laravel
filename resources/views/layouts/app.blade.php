@@ -37,6 +37,17 @@
     <!-- Toast Notification -->
     <div class="toast" id="toast"></div>
 
+    <!-- Confirm Modal (shared across all pages) -->
+    <div class="confirm-modal" id="confirmModal">
+        <div class="confirm-modal-content">
+            <p id="confirmMessage">Apakah Anda yakin ingin menghapus item ini?</p>
+            <div class="confirm-modal-actions">
+                <button class="btn-cancel" id="confirmCancel">Batal</button>
+                <button class="btn-delete" id="confirmDelete">Hapus</button>
+            </div>
+        </div>
+    </div>
+
     <script>lucide.createIcons();</script>
 </body>
 </html>
