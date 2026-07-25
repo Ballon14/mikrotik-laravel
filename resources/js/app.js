@@ -137,40 +137,61 @@ function setupNavigation() {
     const sidebar = document.getElementById("sidebar");
     const toggle = document.getElementById("mobileToggle");
     const overlay = document.getElementById("mobileOverlay");
+    let scrollY = 0;
 
     if (toggle) {
         toggle.addEventListener("click", () => {
-            sidebar.classList.toggle("open");
-            overlay.classList.toggle("active");
-            document.body.classList.toggle("sidebar-open");
+            const isOpen = sidebar.classList.contains("open");
+            if (!isOpen) {
+                scrollY = window.scrollY;
+                sidebar.classList.add("open");
+                overlay.classList.add("active");
+                document.body.classList.add("sidebar-open");
+                document.documentElement.classList.add("sidebar-open");
+                toggle.innerHTML = '<i data-lucide="x"></i>';
+            } else {
+                closeMobileSidebar(toggle);
+                return;
+            }
+            lucide.createIcons();
         });
     }
     if (overlay) {
-        overlay.addEventListener("click", closeMobileSidebar);
+        overlay.addEventListener("click", () => closeMobileSidebar(toggle));
     }
 
-    // Swipe to close sidebar on mobile
     let touchStartX = 0;
-    let touchEndX = 0;
     document.addEventListener("touchstart", (e) => {
         touchStartX = e.changedTouches[0].screenX;
-    }, { passive: true });
-    document.addEventListener("touchend", (e) => {
-        if (!sidebar.classList.contains("open")) return;
-        touchEndX = e.changedTouches[0].screenX;
-        const diff = touchStartX - touchEndX;
-        if (diff > 80) {
-            closeMobileSidebar();
+        // Only detect swipe if sidebar is open or touch starts near left edge
+        if (!sidebar.classList.contains("open") && touchStartX > 40) {
+            touchStartX = 0;
         }
+    }, { passive: true });
+
+    document.addEventListener("touchend", (e) => {
+        if (!touchStartX) return;
+        if (!sidebar.classList.contains("open")) return;
+        const touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (diff > 60) {
+            closeMobileSidebar(toggle);
+        }
+        touchStartX = 0;
     }, { passive: true });
 }
 
-function closeMobileSidebar() {
+function closeMobileSidebar(toggle) {
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("mobileOverlay");
     if (sidebar) sidebar.classList.remove("open");
     if (overlay) overlay.classList.remove("active");
     document.body.classList.remove("sidebar-open");
+    document.documentElement.classList.remove("sidebar-open");
+    if (toggle) {
+        toggle.innerHTML = '<i data-lucide="menu"></i>';
+        lucide.createIcons();
+    }
 }
 
 // ─── Table Scroll Detection ───
