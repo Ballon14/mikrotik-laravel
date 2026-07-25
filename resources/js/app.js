@@ -402,7 +402,7 @@ async function loadOverview() {
         state.data.daemonStatus = daemonStatus;
 
         // Check daemon health
-        const daemonOk = daemonStatus && daemonStatus.status === "ok";
+        const daemonOk = daemonStatus && daemonStatus.healthy === true;
         if (!daemonOk) {
             showBanner(bannerEl, "Daemon monitoring tidak merespon. Data mungkin tidak diperbarui.", "warning");
         } else if (!resource) {
@@ -563,13 +563,11 @@ async function loadTrafficCharts(resource) {
 
     try {
         const ifaces = state.data.interfaces || await apiFetch("/api/interfaces").catch(() => null);
-        if (ifaces?.data?.length) {
+        if (ifaces?.length) {
             state.data.interfaces = ifaces;
-            // Find first ethernet running interface as uplink
-            const eth = ifaces.data.find(i => i.type === "ether" && i.running === "true");
+            const eth = ifaces.find(i => i.type === "ether" && i.running === "true");
             if (eth) uplinkName = eth.name;
-            // Find first bridge
-            const br = ifaces.data.find(i => i.type === "bridge");
+            const br = ifaces.find(i => i.type === "bridge");
             if (br) bridgeName = br.name;
         }
     } catch (e) {
@@ -612,6 +610,9 @@ function renderTrafficChart(key, data, wrapId, statusId, waitId, rxLegendId, txL
         });
         chartResizeObservers[key].observe(wrap);
     }
+
+    // Ensure data is sorted chronologically
+    data = data.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
 
     if (!data || data.length < 2) {
         // Still collecting or no data
