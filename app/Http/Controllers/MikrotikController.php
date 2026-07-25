@@ -354,6 +354,7 @@ class MikrotikController extends Controller
 
             $mikrotik = new MikrotikService;
             $mikrotik->isolateIp($ip);
+            $this->refreshIsolationCache($mikrotik);
 
             return response()->json(['success' => true, 'message' => "IP {$ip} telah diisolasi"]);
         } catch (\Exception $e) {
@@ -371,10 +372,26 @@ class MikrotikController extends Controller
 
             $mikrotik = new MikrotikService;
             $mikrotik->unisolateIp($ip);
+            $this->refreshIsolationCache($mikrotik);
 
             return response()->json(['success' => true, 'message' => "IP {$ip} telah diunisolasi"]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
+        }
+    }
+
+    private function refreshIsolationCache(MikrotikService $mikrotik)
+    {
+        try {
+            $rules = $mikrotik->query('/ip/firewall/filter/print');
+            if (is_array($rules)) {
+                Cache::put('mikrotik_data_fw_filter', $rules, 180);
+            }
+
+            $isolated = $mikrotik->getIsolatedIps();
+            Cache::put('mikrotik_data_isolated_ips', $isolated, 180);
+        } catch (\Exception $e) {
+            // silently fail — daemon will catch up on next cycle
         }
     }
 
