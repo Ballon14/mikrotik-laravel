@@ -6,6 +6,7 @@
 <div class="card">
     <div class="card-header">
         <h3><i data-lucide="file-text" style="width:16px;height:16px;"></i> System Logs</h3>
+        <span class="stale-indicator"><i data-lucide="clock" style="width:12px;height:12px;"></i> <span class="stale-text">Data lama</span></span>
         <span class="log-info-badge">50 terbaru</span>
     </div>
     <div class="card-body card-body-logs">

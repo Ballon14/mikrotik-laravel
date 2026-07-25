@@ -14,6 +14,10 @@ class MikrotikMonitor extends Command
 
     private $api;
 
+    private const CACHE_TTL = 180; // seconds — longer TTL prevents blank UI on transient errors
+
+    private $lastSlowCycleSuccess = true;
+
     public function handle()
     {
         $this->info('Starting MikroTik Monitor Daemon...');
@@ -47,29 +51,7 @@ class MikrotikMonitor extends Command
 
                     // Slow cycle data (every 10 seconds)
                     if ($counter % 5 == 0) {
-                        $this->fetchData('/system/identity/print', 'mikrotik_data_identity');
-                        $this->fetchData('/ip/dhcp-server/lease/print', 'mikrotik_data_dhcp');
-                        $this->fetchData('/ip/route/print', 'mikrotik_data_routes');
-                        $this->fetchData('/ip/firewall/filter/print', 'mikrotik_data_fw_filter');
-                        $this->fetchData('/ip/firewall/nat/print', 'mikrotik_data_fw_nat');
-                        $this->fetchData('/ip/arp/print', 'mikrotik_data_arp');
-                        $this->fetchData('/interface/wireless/registration-table/print', 'mikrotik_data_wireless');
-                        $this->fetchData('/ip/address/print', 'mikrotik_data_ip_addresses');
-                        $this->fetchData('/ip/dns/print', 'mikrotik_data_dns');
-
-                        // Fetch isolated IPs from firewall filter rules
-                        $this->updateIsolatedIps();
-
-                        $logs = $this->api->comm('/log/print');
-                        if (is_array($logs)) {
-                            Cache::put('mikrotik_data_logs', array_slice($logs, -50), 30);
-                        }
-
-                        // Fetch hotspot active users
-                        $hotspot = $this->api->comm('/ip/hotspot/active/print');
-                        if (is_array($hotspot)) {
-                            Cache::put('mikrotik_data_hotspot_active', $hotspot, 30);
-                        }
+                        $this->runSlowCycle();
                     }
 
                     $counter++;
@@ -77,18 +59,108 @@ class MikrotikMonitor extends Command
                 }
             } catch (\Exception $e) {
                 $this->error('Connection dropped: '.$e->getMessage());
-                // Force disconnect and try again
+                Cache::put('mikrotik_daemon_error', $e->getMessage(), 60);
                 @$this->api->disconnect();
                 sleep(5);
             }
         }
     }
 
-    private function fetchData($command, $cacheKey)
+    private function runSlowCycle()
     {
-        $result = $this->api->comm($command);
-        if (is_array($result)) {
-            Cache::put($cacheKey, $result, 30);
+        $commands = [
+            '/system/identity/print' => 'mikrotik_data_identity',
+            '/ip/dhcp-server/lease/print' => 'mikrotik_data_dhcp',
+            '/ip/route/print' => 'mikrotik_data_routes',
+            '/ip/firewall/filter/print' => 'mikrotik_data_fw_filter',
+            '/ip/firewall/nat/print' => 'mikrotik_data_fw_nat',
+            '/ip/arp/print' => 'mikrotik_data_arp',
+            '/interface/wireless/registration-table/print' => 'mikrotik_data_wireless',
+            '/ip/address/print' => 'mikrotik_data_ip_addresses',
+            '/ip/dns/print' => 'mikrotik_data_dns',
+        ];
+
+        $allOk = true;
+
+        foreach ($commands as $cmd => $key) {
+            $ok = $this->fetchData($cmd, $key);
+            if (! $ok) {
+                $allOk = false;
+            }
+        }
+
+        // Logs & hotspot — wrapped individually so one failure doesn't skip the other
+        try {
+            $logs = $this->api->comm('/log/print');
+            if (is_array($logs)) {
+                Cache::put('mikrotik_data_logs', array_slice($logs, -50), self::CACHE_TTL);
+            }
+        } catch (\Exception $e) {
+            $this->error("Failed to fetch logs: {$e->getMessage()}");
+            $allOk = false;
+        }
+
+        try {
+            $hotspot = $this->api->comm('/ip/hotspot/active/print');
+            if (is_array($hotspot)) {
+                Cache::put('mikrotik_data_hotspot_active', $hotspot, self::CACHE_TTL);
+            }
+        } catch (\Exception $e) {
+            $this->error("Failed to fetch hotspot: {$e->getMessage()}");
+            $allOk = false;
+        }
+
+        // Isolated IPs — derived from firewall filter cache
+        $this->updateIsolatedIps();
+
+        Cache::put('mikrotik_daemon_last_run', now()->toIso8601String(), 60);
+
+        if ($allOk) {
+            $this->lastSlowCycleSuccess = true;
+            Cache::forget('mikrotik_daemon_error');
+        } else {
+            $this->lastSlowCycleSuccess = false;
+        }
+    }
+
+    /**
+     * Fetch data from RouterOS API and store in cache.
+     * On failure, keeps the previous cache entry (does not overwrite with empty).
+     * Returns true on success, false on failure.
+     */
+    private function fetchData($command, $cacheKey): bool
+    {
+        try {
+            $result = $this->api->comm($command);
+
+            if ($result === false) {
+                $this->error("API returned false for: {$command} — keeping stale cache");
+
+                return false;
+            }
+
+            if (! is_array($result)) {
+                $this->error("API returned non-array for: {$command} — keeping stale cache");
+
+                return false;
+            }
+
+            // Check if response contains !trap (RouterOS error)
+            if (isset($result[0]) && is_string($result[0]) && str_starts_with($result[0], '!trap')) {
+                $msg = $result[1] ?? 'unknown trap';
+                $this->error("API trap for {$command}: {$msg} — keeping stale cache");
+
+                return false;
+            }
+
+            Cache::put($cacheKey, $result, self::CACHE_TTL);
+
+            return true;
+
+        } catch (\Exception $e) {
+            $this->error("Exception fetching {$command}: {$e->getMessage()} — keeping stale cache");
+
+            return false;
         }
     }
 
@@ -152,6 +224,6 @@ class MikrotikMonitor extends Command
             }
         }
 
-        Cache::put('mikrotik_data_isolated_ips', $isolated, 30);
+        Cache::put('mikrotik_data_isolated_ips', $isolated, self::CACHE_TTL);
     }
 }

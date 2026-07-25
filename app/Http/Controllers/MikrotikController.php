@@ -41,7 +41,45 @@ class MikrotikController extends Controller
 
     public function health()
     {
-        return response()->json(['status' => 'ok']);
+        $daemonLastRun = Cache::get('mikrotik_daemon_last_run', null);
+        $daemonError = Cache::get('mikrotik_daemon_error', null);
+        $resource = Cache::get('mikrotik_data_resource', []);
+
+        return response()->json([
+            'status' => 'ok',
+            'daemon' => [
+                'lastRun' => $daemonLastRun,
+                'connected' => ! empty($resource),
+                'error' => $daemonError,
+            ],
+            'cache' => [
+                'resource' => ! empty($resource),
+                'interfaces' => Cache::has('mikrotik_data_interfaces'),
+                'dhcp' => Cache::has('mikrotik_data_dhcp'),
+                'routes' => Cache::has('mikrotik_data_routes'),
+                'firewallFilter' => Cache::has('mikrotik_data_fw_filter'),
+                'firewallNat' => Cache::has('mikrotik_data_fw_nat'),
+                'arp' => Cache::has('mikrotik_data_arp'),
+                'logs' => Cache::has('mikrotik_data_logs'),
+            ],
+        ]);
+    }
+
+    public function daemonStatus()
+    {
+        $lastRun = Cache::get('mikrotik_daemon_last_run', null);
+        $error = Cache::get('mikrotik_daemon_error', null);
+        $resource = Cache::get('mikrotik_data_resource', []);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'running' => ! empty($resource),
+                'lastRun' => $lastRun,
+                'error' => $error,
+                'healthy' => $lastRun !== null && empty($error) && ! empty($resource),
+            ],
+        ]);
     }
 
     public function router()

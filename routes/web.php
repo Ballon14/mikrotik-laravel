@@ -10,6 +10,12 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// ─── Public API (no auth required) ───
+Route::prefix('api')->group(function () {
+    Route::get('/health', [MikrotikController::class, 'health']);
+    Route::get('/daemon-status', [MikrotikController::class, 'daemonStatus']);
+});
+
 // ─── Protected Routes ───
 Route::middleware('auth')->group(function () {
 
@@ -58,7 +64,6 @@ Route::middleware('auth')->group(function () {
 
     // API Routes
     Route::prefix('api')->group(function () {
-        Route::get('/health', [MikrotikController::class, 'health']);
         Route::get('/router', [MikrotikController::class, 'router']);
         Route::get('/identity', [MikrotikController::class, 'identity']);
         Route::get('/interfaces', [MikrotikController::class, 'interfaces']);

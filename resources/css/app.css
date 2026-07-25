@@ -527,6 +527,22 @@ html {
     border: 1px solid rgba(34, 211, 238, 0.2);
 }
 
+.card-header .stale-indicator {
+    font-size: 10px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    margin-left: 8px;
+}
+
+.card-header .stale-indicator.visible {
+    opacity: 1;
+    color: var(--accent-yellow);
+}
+
 .card-body {
     padding: 20px;
 }

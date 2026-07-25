@@ -6,6 +6,7 @@
 <div class="card">
     <div class="card-header">
         <h3><i data-lucide="shield" style="width:16px;height:16px;"></i> Firewall Rules</h3>
+        <span class="stale-indicator"><i data-lucide="clock" style="width:12px;height:12px;"></i> <span class="stale-text">Data lama</span></span>
     </div>
     <div class="card-body">
         <div class="tabs">

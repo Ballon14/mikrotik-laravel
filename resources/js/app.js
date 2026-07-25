@@ -14,6 +14,7 @@ const state = {
     data: {},
     modalOpen: false, // Prevent refresh while modal is open
     pendingConfirm: null, // For delete confirmation
+    sectionTimestamps: {}, // section => ISO string of last successful fetch
 };
 
 // ─── CSRF Token ───
@@ -206,6 +207,7 @@ async function loadSectionData(section) {
         updateConnectionStatus(true);
     } catch (err) {
         updateConnectionStatus(false, err.message);
+        updateStaleIndicator(state.activeSection, true);
         showToast("Koneksi ke MikroTik gagal: " + err.message, "error");
     } finally {
         lucide.createIcons();
@@ -225,6 +227,28 @@ function updateConnectionStatus(connected, error) {
     if (valueEl) {
         valueEl.textContent = connected ? state.routerName : "Disconnected";
     }
+}
+
+// ─── Stale Data Helpers ───
+function markSectionLoaded(section) {
+    state.sectionTimestamps[section] = Date.now();
+    updateStaleIndicator(section, false);
+}
+
+function updateStaleIndicator(section, isStale) {
+    document.querySelectorAll('.stale-indicator').forEach(el => {
+        el.classList.toggle('visible', isStale);
+    });
+}
+
+function hasPrevData(section) {
+    return state.sectionTimestamps[section] !== undefined;
+}
+
+function isDataStale(section) {
+    const ts = state.sectionTimestamps[section];
+    if (!ts) return true;
+    return (Date.now() - ts) > 30000; // stale if >30s since last update
 }
 
 // ─── Toast Notifications ───
@@ -515,6 +539,7 @@ async function loadInterfaces() {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
+        if (hasPrevData('interfaces')) return;
         tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="ethernet-port" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada interface ditemukan</div></div></td></tr>`;
         return;
     }
@@ -547,6 +572,8 @@ async function loadInterfaces() {
             </tr>`;
         })
         .join("");
+
+    markSectionLoaded('interfaces');
 
     // Attach click handlers
     tbody.querySelectorAll("tr[data-iface-name]").forEach((row) => {
@@ -717,6 +744,7 @@ async function loadDHCP() {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
+        if (hasPrevData('dhcp')) return;
         tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="list" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada DHCP lease</div></div></td></tr>`;
         return;
     }
@@ -752,6 +780,7 @@ async function loadDHCP() {
             </tr>`;
         })
         .join("");
+    markSectionLoaded('dhcp');
 }
 
 // DHCP CRUD handlers
@@ -857,6 +886,7 @@ async function loadRoutes() {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
+        if (hasPrevData('routes')) return;
         tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i data-lucide="map" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada route</div></div></td></tr>`;
         return;
     }
@@ -877,6 +907,7 @@ async function loadRoutes() {
             </tr>`;
         })
         .join("");
+    markSectionLoaded('routes');
 }
 
 // ─── Section: Firewall (with CRUD) ───
@@ -898,6 +929,7 @@ function renderFirewallFilter(data) {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
+        if (hasPrevData('firewall-filter')) return;
         tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i data-lucide="shield" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada filter rule</div></div></td></tr>`;
         return;
     }
@@ -921,6 +953,7 @@ function renderFirewallFilter(data) {
             </tr>`;
         })
         .join("");
+    markSectionLoaded('firewall-filter');
 }
 
 function renderFirewallNat(data) {
@@ -928,6 +961,7 @@ function renderFirewallNat(data) {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
+        if (hasPrevData('firewall-nat')) return;
         tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i data-lucide="shuffle" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada NAT rule</div></div></td></tr>`;
         return;
     }
@@ -951,6 +985,7 @@ function renderFirewallNat(data) {
             </tr>`;
         })
         .join("");
+    markSectionLoaded('firewall-nat');
 }
 
 // Firewall CRUD handlers
@@ -1140,6 +1175,7 @@ async function loadARP() {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
+        if (hasPrevData('arp')) return;
         tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i data-lucide="radio" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada ARP entry</div></div></td></tr>`;
         return;
     }
@@ -1161,6 +1197,7 @@ async function loadARP() {
             </tr>`;
         })
         .join("");
+    markSectionLoaded('arp');
 }
 
 // ─── Section: Logs ───
@@ -1171,6 +1208,7 @@ async function loadLogs() {
     if (!container) return;
 
     if (!data || data.length === 0) {
+        if (hasPrevData('logs')) return;
         container.innerHTML = `<div class="empty-state"><i data-lucide="file-text" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada log</div></div>`;
         return;
     }
@@ -1194,6 +1232,7 @@ async function loadLogs() {
             </div>`;
         })
         .join("");
+    markSectionLoaded('logs');
 }
 
 // ─── Section: Hotspot ───
@@ -1205,6 +1244,7 @@ async function loadHotspot() {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
+            if (hasPrevData('hotspot')) return;
             tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="wifi" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada user hotspot aktif</div></div></td></tr>`;
             return;
         }
@@ -1223,6 +1263,7 @@ async function loadHotspot() {
                 </tr>`;
             })
             .join("");
+        markSectionLoaded('hotspot');
     } catch {
         const tbody = document.getElementById("hotspotTable");
         if (tbody) {
@@ -1242,6 +1283,7 @@ async function loadIpAddresses() {
     await populateInterfaceSelect();
 
     if (!data || data.length === 0) {
+        if (hasPrevData('ip-addresses')) return;
         tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="globe" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada IP address</div></div></td></tr>`;
         return;
     }
@@ -1271,6 +1313,7 @@ async function loadIpAddresses() {
             </tr>`;
         })
         .join("");
+    markSectionLoaded('ip-addresses');
 }
 
 async function populateInterfaceSelect() {
@@ -1381,6 +1424,7 @@ async function loadIpIsolation() {
 
     if (isolatedTable) {
         if (!isolatedIps || isolatedIps.length === 0) {
+            if (hasPrevData('ip-isolation')) return;
             isolatedTable.innerHTML = `<tr><td colspan="3"><div class="empty-state"><i data-lucide="check-circle" style="width:24px;height:24px;color:#34d399;"></i><div class="empty-state-text">Tidak ada IP yang diisolasi</div></div></td></tr>`;
         } else {
             isolatedTable.innerHTML = isolatedIps
@@ -1403,6 +1447,7 @@ async function loadIpIsolation() {
     const dhcpIsolateTable = document.getElementById("dhcpIsolateTable");
     if (dhcpIsolateTable) {
         if (!dhcpData || dhcpData.length === 0) {
+            if (hasPrevData('ip-isolation')) return;
             dhcpIsolateTable.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i data-lucide="list" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada DHCP client</div></div></td></tr>`;
         } else {
             dhcpIsolateTable.innerHTML = dhcpData
@@ -1430,6 +1475,7 @@ async function loadIpIsolation() {
                 .join("");
         }
     }
+    markSectionLoaded('ip-isolation');
 }
 
 function setupIpIsolation() {

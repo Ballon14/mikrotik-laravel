@@ -6,6 +6,7 @@
 <div class="card">
     <div class="card-header">
         <h3><i data-lucide="lock" style="width:16px;height:16px;"></i> Isolasi IP</h3>
+        <span class="stale-indicator"><i data-lucide="clock" style="width:12px;height:12px;"></i> <span class="stale-text">Data lama</span></span>
     </div>
     <div class="card-body">
         <p class="section-desc">Isolasi IP akan memblokir semua traffic <strong>forward</strong> (masuk & keluar) pada IP yang dipilih melalui firewall filter rules.</p>
@@ -23,6 +24,7 @@
 <div class="card">
     <div class="card-header">
         <h3><i data-lucide="shield-off" style="width:16px;height:16px;"></i> Daftar IP Terisolasi</h3>
+        <span class="stale-indicator"><i data-lucide="clock" style="width:12px;height:12px;"></i> <span class="stale-text">Data lama</span></span>
         <span class="header-badge" id="isolatedCount">0</span>
     </div>
     <div class="card-body">
@@ -46,6 +48,7 @@
 <div class="card">
     <div class="card-header">
         <h3><i data-lucide="list" style="width:16px;height:16px;"></i> DHCP Active Clients</h3>
+        <span class="stale-indicator"><i data-lucide="clock" style="width:12px;height:12px;"></i> <span class="stale-text">Data lama</span></span>
     </div>
     <div class="card-body">
         <div class="data-table-wrapper">
