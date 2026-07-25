@@ -64,9 +64,16 @@ class BillingController extends Controller
 
     public function packages()
     {
+        if (request('all')) {
+            return response()->json([
+                'success' => true,
+                'data' => Package::orderBy('id', 'desc')->get()->toArray(),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
-            'data' => Package::orderBy('id', 'desc')->get(),
+            'data' => Package::orderBy('id', 'desc')->paginate(25)->toArray(),
         ]);
     }
 
@@ -112,13 +119,23 @@ class BillingController extends Controller
 
     public function customers()
     {
+        if (request('all')) {
+            return response()->json([
+                'success' => true,
+                'data' => Customer::with(['package', 'pppoeAccounts.router', 'latestInvoice'])
+                    ->orderBy('id', 'desc')
+                    ->get()
+                    ->toArray(),
+            ]);
+        }
+
         $customers = Customer::with(['package', 'pppoeAccounts.router', 'latestInvoice'])
             ->orderBy('id', 'desc')
-            ->get();
+            ->paginate(25);
 
         return response()->json([
             'success' => true,
-            'data' => $customers,
+            'data' => $customers->toArray(),
         ]);
     }
 
@@ -201,9 +218,16 @@ class BillingController extends Controller
 
     public function pppoeAccounts()
     {
-        $accounts = PppoeAccount::with(['customer', 'router'])->orderBy('id', 'desc')->get();
+        if (request('all')) {
+            return response()->json([
+                'success' => true,
+                'data' => PppoeAccount::with(['customer', 'router'])->orderBy('id', 'desc')->get()->toArray(),
+            ]);
+        }
 
-        return response()->json(['success' => true, 'data' => $accounts]);
+        $accounts = PppoeAccount::with(['customer', 'router'])->orderBy('id', 'desc')->paginate(25);
+
+        return response()->json(['success' => true, 'data' => $accounts->toArray()]);
     }
 
     public function storePppoeAccount(StorePppoeAccountRequest $request)
@@ -260,11 +284,18 @@ class BillingController extends Controller
 
     public function invoices()
     {
-        $invoices = Invoice::with(['customer', 'payments'])->orderBy('id', 'desc')->get();
+        if (request('all')) {
+            return response()->json([
+                'success' => true,
+                'data' => Invoice::with(['customer', 'payments'])->orderBy('id', 'desc')->get()->toArray(),
+            ]);
+        }
+
+        $invoices = Invoice::with(['customer', 'payments'])->orderBy('id', 'desc')->paginate(25);
 
         return response()->json([
             'success' => true,
-            'data' => $invoices,
+            'data' => $invoices->toArray(),
         ]);
     }
 
@@ -324,11 +355,18 @@ class BillingController extends Controller
 
     public function payments()
     {
-        $payments = Payment::with('invoice.customer')->orderBy('id', 'desc')->get();
+        if (request('all')) {
+            return response()->json([
+                'success' => true,
+                'data' => Payment::with('invoice.customer')->orderBy('id', 'desc')->get()->toArray(),
+            ]);
+        }
+
+        $payments = Payment::with('invoice.customer')->orderBy('id', 'desc')->paginate(25);
 
         return response()->json([
             'success' => true,
-            'data' => $payments,
+            'data' => $payments->toArray(),
         ]);
     }
 
@@ -382,11 +420,20 @@ class BillingController extends Controller
 
     public function routers()
     {
-        $routers = Router::orderBy('id', 'desc')->get()->map(function ($router) {
+        if (request('all')) {
+            return response()->json([
+                'success' => true,
+                'data' => Router::orderBy('id', 'desc')->get()->through(function ($router) {
+                    return $router->makeHidden('password');
+                })->toArray(),
+            ]);
+        }
+
+        $routers = Router::orderBy('id', 'desc')->paginate(25)->through(function ($router) {
             return $router->makeHidden('password');
         });
 
-        return response()->json(['success' => true, 'data' => $routers]);
+        return response()->json(['success' => true, 'data' => $routers->toArray()]);
     }
 
     public function storeRouter(StoreRouterRequest $request)
@@ -436,11 +483,20 @@ class BillingController extends Controller
 
     public function auditLogs()
     {
+        if (request('all')) {
+            return response()->json([
+                'success' => true,
+                'data' => AuditLog::with('user')
+                    ->orderBy('id', 'desc')
+                    ->get()
+                    ->toArray(),
+            ]);
+        }
+
         $logs = AuditLog::with('user')
             ->orderBy('id', 'desc')
-            ->take(100)
-            ->get();
+            ->paginate(25);
 
-        return response()->json(['success' => true, 'data' => $logs]);
+        return response()->json(['success' => true, 'data' => $logs->toArray()]);
     }
 }

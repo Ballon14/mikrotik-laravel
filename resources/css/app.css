@@ -2148,6 +2148,111 @@ body.modal-open {
     background: linear-gradient(135deg, #d97706, #fbbf24) !important;
 }
 
+/* ─── Pagination Bar ─── */
+.pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.pagination-bar .pagination-info {
+    color: var(--text-muted);
+}
+
+.pagination-bar .pagination-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.pagination-bar .page-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.pagination-bar .page-btn:hover:not(:disabled) {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+}
+
+.pagination-bar .page-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* ─── Responsive Table to Card ─── */
+@media (max-width: 640px) {
+    .data-table thead {
+        display: none;
+    }
+
+    .data-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 12px;
+        background: var(--bg-card);
+        backdrop-filter: blur(12px);
+    }
+
+    .data-table tbody td {
+        display: flex;
+        align-items: center;
+        padding: 6px 0;
+        border: none;
+        font-size: 12px;
+    }
+
+    .data-table tbody td::before {
+        content: attr(data-label);
+        flex: 0 0 38%;
+        font-weight: 600;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        padding-right: 8px;
+    }
+
+    .data-table tbody td.actions-cell {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding-top: 8px;
+        margin-top: 6px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .data-table tbody td.actions-cell::before {
+        display: none;
+    }
+
+    .data-table tbody tr:hover {
+        border-color: var(--border-active);
+    }
+
+    .data-table.clickable tbody tr {
+        cursor: pointer;
+    }
+
+    .pagination-bar {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+}
+
 /* ─── Responsive Fixes ─── */
 @media (max-width: 640px) {
     .form-row {

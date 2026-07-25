@@ -27,16 +27,17 @@
 
 @push('scripts')
 <script>
-window.loadAuditLogs = async function() {
+window.loadAuditLogs = async function(page) {
     try {
-        const res = await fetch('/api/audit-logs');
+        const res = await fetch('/api/audit-logs?page=' + (page || 1));
         const json = await res.json();
         const tbody = document.getElementById('auditLogsTable');
-        if (!json.success || json.data.length === 0) {
+        if (!json.success || json.data.data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada log</div></div></td></tr>';
+            document.getElementById("auditLogsPagination").innerHTML = "";
             return;
         }
-        tbody.innerHTML = json.data.map(log => `
+        tbody.innerHTML = json.data.data.map(log => `
             <tr>
                 <td style="white-space:nowrap;">${new Date(log.created_at).toLocaleString('id-ID')}</td>
                 <td><code>${log.action}</code></td>
@@ -45,10 +46,12 @@ window.loadAuditLogs = async function() {
                 <td>${log.user ? log.user.name : '-'}</td>
             </tr>
         `).join('');
+        addTableLabels("auditLogsTable");
+        renderBillingPagination("auditLogsPagination", json.data.current_page, json.data.last_page, json.data.total, "loadAuditLogs");
         lucide.createIcons();
     } catch(e) { console.error(e); }
 };
 
-document.addEventListener('DOMContentLoaded', loadAuditLogs);
+document.addEventListener('DOMContentLoaded', () => loadAuditLogs());
 </script>
 @endpush

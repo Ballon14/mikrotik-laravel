@@ -3,20 +3,55 @@ function esc(str) {
     return String(str).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-window.loadPackages = async function() {
+const BILLING_PAGE_SIZE = 25;
+
+function renderBillingPagination(containerId, currentPage, lastPage, total, loadFn) {
+    let container = document.getElementById(containerId);
+    if (!container) {
+        container = document.createElement("div");
+        container.id = containerId;
+        const table = document.querySelector(`#${containerId.replace("Pagination", "Table")}`);
+        if (table) {
+            const wrapper = table.closest(".data-table-wrapper") || table.parentElement;
+            wrapper.after(container);
+        }
+    }
+    if (!container) return;
+    if (lastPage <= 1) { container.innerHTML = ""; return; }
+    const from = (currentPage - 1) * BILLING_PAGE_SIZE + 1;
+    const to = Math.min(currentPage * BILLING_PAGE_SIZE, total);
+    container.innerHTML = `
+        <div class="pagination-bar">
+            <span class="pagination-info">${from}-${to} dari ${total}</span>
+            <div class="pagination-actions">
+                <button class="page-btn" data-page="${currentPage - 1}" ${currentPage <= 1 ? "disabled" : ""}>Prev</button>
+                <span style="padding:5px 8px;color:var(--text-muted);font-size:12px;">${currentPage} / ${lastPage}</span>
+                <button class="page-btn" data-page="${currentPage + 1}" ${currentPage >= lastPage ? "disabled" : ""}>Next</button>
+            </div>
+        </div>
+    `;
+    container.querySelectorAll(".page-btn:not(:disabled)").forEach(btn => {
+        btn.addEventListener("click", () => {
+            window[loadFn](parseInt(btn.dataset.page));
+        });
+    });
+}
+
+window.loadPackages = async function(page) {
     try {
-        const res = await fetch('/api/packages');
+        const res = await fetch(`/api/packages?page=${page || 1}`);
         const data = await res.json();
         
         const tbody = document.getElementById('packagesTable');
         if (!tbody) return;
 
-        if (!data.success || data.data.length === 0) {
+        if (!data.success || data.data.data.length === 0) {
             tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada paket</div></div></td></tr>`;
+            document.getElementById("packagesPagination").innerHTML = "";
             return;
         }
 
-        tbody.innerHTML = data.data.map(p => `
+        tbody.innerHTML = data.data.data.map(p => `
             <tr>
                 <td>${p.id}</td>
                 <td><strong>${esc(p.name)}</strong></td>
@@ -29,26 +64,29 @@ window.loadPackages = async function() {
                 </td>
             </tr>
         `).join('');
+        addTableLabels("packagesTable");
+        renderBillingPagination("packagesPagination", data.data.current_page, data.data.last_page, data.data.total, "loadPackages");
         lucide.createIcons();
     } catch (e) {
         console.error(e);
     }
 };
 
-window.loadCustomers = async function() {
+window.loadCustomers = async function(page) {
     try {
-        const res = await fetch('/api/customers');
+        const res = await fetch(`/api/customers?page=${page || 1}`);
         const data = await res.json();
         
         const tbody = document.getElementById('customersTable');
         if (!tbody) return;
 
-        if (!data.success || data.data.length === 0) {
+        if (!data.success || data.data.data.length === 0) {
             tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada pelanggan</div></div></td></tr>`;
+            document.getElementById("customersPagination").innerHTML = "";
             return;
         }
 
-        tbody.innerHTML = data.data.map(c => {
+        tbody.innerHTML = data.data.data.map(c => {
             let statusBadge = '';
             if(c.status === 'active') statusBadge = '<span class="status-badge success">Active</span>';
             else if(c.status === 'inactive') statusBadge = '<span class="status-badge warning">Inactive</span>';
@@ -68,26 +106,29 @@ window.loadCustomers = async function() {
             </tr>
             `;
         }).join('');
+        addTableLabels("customersTable");
+        renderBillingPagination("customersPagination", data.data.current_page, data.data.last_page, data.data.total, "loadCustomers");
         lucide.createIcons();
     } catch (e) {
         console.error(e);
     }
 };
 
-window.loadInvoices = async function() {
+window.loadInvoices = async function(page) {
     try {
-        const res = await fetch('/api/invoices');
+        const res = await fetch(`/api/invoices?page=${page || 1}`);
         const data = await res.json();
         
         const tbody = document.getElementById('invoicesTable');
         if (!tbody) return;
 
-        if (!data.success || data.data.length === 0) {
+        if (!data.success || data.data.data.length === 0) {
             tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada tagihan</div></div></td></tr>`;
+            document.getElementById("invoicesPagination").innerHTML = "";
             return;
         }
 
-        tbody.innerHTML = data.data.map(i => {
+        tbody.innerHTML = data.data.data.map(i => {
             let statusBadge = i.status === 'paid' 
                 ? '<span class="status-badge success">Lunas</span>'
                 : '<span class="status-badge danger">Belum Lunas</span>';
@@ -106,6 +147,8 @@ window.loadInvoices = async function() {
             </tr>
             `;
         }).join('');
+        addTableLabels("invoicesTable");
+        renderBillingPagination("invoicesPagination", data.data.current_page, data.data.last_page, data.data.total, "loadInvoices");
         lucide.createIcons();
     } catch (e) {
         console.error(e);
@@ -234,8 +277,7 @@ window.editPackage = function(id, name, price, speed, desc) {
 };
 
 window.editCustomer = async function(id) {
-    // In a real app we might fetch the specific customer or find from local state, for now fetch from api
-    const res = await fetch('/api/customers');
+    const res = await fetch('/api/customers?all=true');
     const data = await res.json();
     const c = data.data.find(x => x.id == id);
     if (c) {
@@ -255,7 +297,7 @@ window.editCustomer = async function(id) {
 };
 
 window.editInvoice = async function(id) {
-    const res = await fetch('/api/invoices');
+    const res = await fetch('/api/invoices?all=true');
     const data = await res.json();
     const i = data.data.find(x => x.id == id);
     if (i) {
@@ -298,14 +340,14 @@ function confirmDeleteAction(resource, id, callback) {
 
 // Helpers
 async function loadPackageOptions() {
-    const res = await fetch('/api/packages');
+    const res = await fetch('/api/packages?all=true');
     const data = await res.json();
     const select = document.getElementById('custPackage');
     select.innerHTML = '<option value="">— Pilih Paket —</option>' + data.data.map(p => `<option value="${p.id}">${p.name} (Rp ${Number(p.price).toLocaleString('id-ID')})</option>`).join('');
 }
 
 async function loadCustomerOptions() {
-    const res = await fetch('/api/customers');
+    const res = await fetch('/api/customers?all=true');
     const data = await res.json();
     const select = document.getElementById('invCustomer');
     select.innerHTML = '<option value="">— Pilih Pelanggan —</option>' + data.data.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -338,19 +380,20 @@ async function saveCrud(url, method, data, callback) {
 
 // ─── Payments ───
 
-window.loadPayments = async function() {
+window.loadPayments = async function(page) {
     try {
-        const res = await fetch('/api/payments');
+        const res = await fetch(`/api/payments?page=${page || 1}`);
         const json = await res.json();
         const tbody = document.getElementById('paymentsTable');
         if (!tbody) return;
 
-        if (!json.success || json.data.length === 0) {
+        if (!json.success || json.data.data.length === 0) {
             tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada pembayaran</div></div></td></tr>`;
+            document.getElementById("paymentsPagination").innerHTML = "";
             return;
         }
 
-        tbody.innerHTML = json.data.map(p => `
+        tbody.innerHTML = json.data.data.map(p => `
             <tr>
                 <td>${p.id}</td>
                 <td>${p.invoice ? esc(p.invoice.invoice_number) : '-'}</td>
@@ -362,12 +405,14 @@ window.loadPayments = async function() {
                 <td><button class="btn-delete" onclick="deletePayment(${p.id})">Hapus</button></td>
             </tr>
         `).join('');
+        addTableLabels("paymentsTable");
+        renderBillingPagination("paymentsPagination", json.data.current_page, json.data.last_page, json.data.total, "loadPayments");
         lucide.createIcons();
     } catch(e) { console.error(e); }
 };
 
 window.loadInvoiceOptions = async function() {
-    const res = await fetch('/api/invoices');
+    const res = await fetch('/api/invoices?all=true');
     const json = await res.json();
     const sel = document.getElementById('payInvoice');
     if (!sel) return;
@@ -378,19 +423,20 @@ window.deletePayment = function(id) { confirmDeleteAction('payments', id, window
 
 // ─── Routers ───
 
-window.loadRouters = async function() {
+window.loadRouters = async function(page) {
     try {
-        const res = await fetch('/api/routers');
+        const res = await fetch(`/api/routers?page=${page || 1}`);
         const json = await res.json();
         const tbody = document.getElementById('routersTable');
         if (!tbody) return;
 
-        if (!json.success || json.data.length === 0) {
+        if (!json.success || json.data.data.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada router</div></div></td></tr>`;
+            document.getElementById("routersPagination").innerHTML = "";
             return;
         }
 
-        tbody.innerHTML = json.data.map(r => `
+        tbody.innerHTML = json.data.data.map(r => `
             <tr>
                 <td>${r.id}</td>
                 <td><strong>${esc(r.name)}</strong></td>
@@ -404,12 +450,14 @@ window.loadRouters = async function() {
                 </td>
             </tr>
         `).join('');
+        addTableLabels("routersTable");
+        renderBillingPagination("routersPagination", json.data.current_page, json.data.last_page, json.data.total, "loadRouters");
         lucide.createIcons();
     } catch(e) { console.error(e); }
 };
 
 window.editRouter = async function(id) {
-    const res = await fetch('/api/routers');
+    const res = await fetch('/api/routers?all=true');
     const json = await res.json();
     const r = json.data.find(x => x.id == id);
     if (!r) return;
@@ -428,19 +476,20 @@ window.deleteRouter = function(id) { confirmDeleteAction('routers', id, window.l
 
 // ─── PPPoE Accounts ───
 
-window.loadPppoeAccounts = async function() {
+window.loadPppoeAccounts = async function(page) {
     try {
-        const res = await fetch('/api/pppoe-accounts');
+        const res = await fetch(`/api/pppoe-accounts?page=${page || 1}`);
         const json = await res.json();
         const tbody = document.getElementById('pppoeTable');
         if (!tbody) return;
 
-        if (!json.success || json.data.length === 0) {
+        if (!json.success || json.data.data.length === 0) {
             tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada akun PPPoE</div></div></td></tr>`;
+            document.getElementById("pppoePagination").innerHTML = "";
             return;
         }
 
-        tbody.innerHTML = json.data.map(a => {
+        tbody.innerHTML = json.data.data.map(a => {
             const statusBadge = a.disabled
                 ? '<span class="status-badge warning">Nonaktif</span>'
                 : '<span class="status-badge success">Aktif</span>';
@@ -465,12 +514,14 @@ window.loadPppoeAccounts = async function() {
             </tr>
             `;
         }).join('');
+        addTableLabels("pppoeTable");
+        renderBillingPagination("pppoePagination", json.data.current_page, json.data.last_page, json.data.total, "loadPppoeAccounts");
         lucide.createIcons();
     } catch(e) { console.error(e); }
 };
 
 window.editPppoe = async function(id) {
-    const res = await fetch('/api/pppoe-accounts');
+    const res = await fetch('/api/pppoe-accounts?all=true');
     const json = await res.json();
     const a = json.data.find(x => x.id == id);
     if (!a) return;
@@ -502,7 +553,7 @@ window.syncPppoe = async function(id) {
 window.deletePppoe = function(id) { confirmDeleteAction('pppoe-accounts', id, window.loadPppoeAccounts); };
 
 async function loadRouterOptions() {
-    const res = await fetch('/api/routers');
+    const res = await fetch('/api/routers?all=true');
     const json = await res.json();
     const sel = document.getElementById('pppRouter');
     if (!sel) return;

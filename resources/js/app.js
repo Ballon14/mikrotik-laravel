@@ -12,9 +12,10 @@ const state = {
     isRefreshing: false,
     intervalId: null,
     data: {},
-    modalOpen: false, // Prevent refresh while modal is open
-    pendingConfirm: null, // For delete confirmation
-    sectionTimestamps: {}, // section => ISO string of last successful fetch
+    modalOpen: false,
+    pendingConfirm: null,
+    sectionTimestamps: {},
+    pages: {},
 };
 
 // ─── CSRF Token ───
@@ -130,6 +131,61 @@ function percentUsed(free, total) {
     if (!free || !total) return 0;
     const used = Number(total) - Number(free);
     return Math.round((used / Number(total)) * 100);
+}
+
+// ─── Pagination ───
+const PAGE_SIZE = 25;
+
+function paginateData(data, page) {
+    if (!data || !data.length) return { items: [], totalPages: 0, currentPage: 1, totalItems: 0 };
+    const totalItems = data.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+    const safePage = Math.max(1, Math.min(page, totalPages));
+    const start = (safePage - 1) * PAGE_SIZE;
+    return {
+        items: data.slice(start, start + PAGE_SIZE),
+        totalPages,
+        currentPage: safePage,
+        totalItems,
+    };
+}
+
+function renderPaginationBar(containerId, currentPage, totalPages, totalItems, onPageChange) {
+    let container = document.getElementById(containerId);
+    if (!container) {
+        container = document.createElement("div");
+        container.id = containerId;
+        const table = document.querySelector(`#${containerId.replace("Pagination", "Table")}`);
+        if (table) {
+            table.closest(".data-table-wrapper")?.after(container);
+        }
+    }
+    if (!container) return;
+    if (totalPages <= 1) { container.innerHTML = ""; return; }
+    container.innerHTML = `
+        <div class="pagination-bar">
+            <span class="pagination-info">${(currentPage - 1) * PAGE_SIZE + 1}-${Math.min(currentPage * PAGE_SIZE, totalItems)} dari ${totalItems}</span>
+            <div class="pagination-actions">
+                <button class="page-btn" data-page="${currentPage - 1}" ${currentPage <= 1 ? "disabled" : ""}>Prev</button>
+                <span style="padding:5px 8px;color:var(--text-muted);font-size:12px;">${currentPage} / ${totalPages}</span>
+                <button class="page-btn" data-page="${currentPage + 1}" ${currentPage >= totalPages ? "disabled" : ""}>Next</button>
+            </div>
+        </div>
+    `;
+    container.querySelectorAll(".page-btn:not(:disabled)").forEach(btn => {
+        btn.addEventListener("click", () => onPageChange(parseInt(btn.dataset.page)));
+    });
+}
+
+function addTableLabels(tableId) {
+    const table = document.querySelector(`#${tableId}`);
+    if (!table) return;
+    const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.trim());
+    table.querySelectorAll("tbody tr").forEach(row => {
+        row.querySelectorAll("td").forEach((td, i) => {
+            if (headers[i] && !td.dataset.label) td.dataset.label = headers[i];
+        });
+    });
 }
 
 // ─── Navigation ───
@@ -739,13 +795,17 @@ async function loadInterfaces() {
     if (!data || data.length === 0) {
         if (hasPrevData('interfaces')) return;
         tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="ethernet-port" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada interface ditemukan</div></div></td></tr>`;
+        renderPaginationBar("interfacesPagination", 1, 1, 0, () => {});
         return;
     }
 
-    // Update badge count
     updateNavBadge("interfaces", data.length);
 
-    tbody.innerHTML = data
+    const page = state.pages.interfaces || 1;
+    const { items, totalPages, currentPage, totalItems } = paginateData(data, page);
+    state.pages.interfaces = currentPage;
+
+    tbody.innerHTML = items
         .map((iface) => {
             const isRunning = iface.running === "true" || iface.running === true;
             const isDisabled = iface.disabled === "true" || iface.disabled === true;
@@ -771,9 +831,14 @@ async function loadInterfaces() {
         })
         .join("");
 
+    addTableLabels("interfacesTable");
+    renderPaginationBar("interfacesPagination", currentPage, totalPages, totalItems, (np) => {
+        state.pages.interfaces = np;
+        loadInterfaces();
+    });
+
     markSectionLoaded('interfaces');
 
-    // Attach click handlers
     tbody.querySelectorAll("tr[data-iface-name]").forEach((row) => {
         row.addEventListener("click", () => {
             openInterfaceModal(row.dataset.ifaceName);
@@ -1062,12 +1127,17 @@ async function loadDHCP() {
     if (!data || data.length === 0) {
         if (hasPrevData('dhcp')) return;
         tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="list" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada DHCP lease</div></div></td></tr>`;
+        renderPaginationBar("dhcpPagination", 1, 1, 0, () => {});
         return;
     }
 
     updateNavBadge("dhcp", data.length);
 
-    tbody.innerHTML = data
+    const page = state.pages.dhcp || 1;
+    const { items, totalPages, currentPage, totalItems } = paginateData(data, page);
+    state.pages.dhcp = currentPage;
+
+    tbody.innerHTML = items
         .map((lease) => {
             const isBound = lease.status === "bound";
             const badgeClass = isBound ? "badge-bound" : "badge-inactive";
@@ -1096,6 +1166,13 @@ async function loadDHCP() {
             </tr>`;
         })
         .join("");
+
+    addTableLabels("dhcpTable");
+    renderPaginationBar("dhcpPagination", currentPage, totalPages, totalItems, (np) => {
+        state.pages.dhcp = np;
+        loadDHCP();
+    });
+
     markSectionLoaded('dhcp');
 }
 
@@ -1208,12 +1285,17 @@ async function loadRoutes() {
     if (!data || data.length === 0) {
         if (hasPrevData('routes')) return;
         tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i data-lucide="map" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada route</div></div></td></tr>`;
+        renderPaginationBar("routesPagination", 1, 1, 0, () => {});
         return;
     }
 
     updateNavBadge("routes", data.length);
 
-    tbody.innerHTML = data
+    const page = state.pages.routes || 1;
+    const { items, totalPages, currentPage, totalItems } = paginateData(data, page);
+    state.pages.routes = currentPage;
+
+    tbody.innerHTML = items
         .map((route) => {
             const isActive = route.active === "true" || route.active === true;
             const badgeClass = isActive ? "badge-active" : "badge-inactive";
@@ -1227,6 +1309,13 @@ async function loadRoutes() {
             </tr>`;
         })
         .join("");
+
+    addTableLabels("routesTable");
+    renderPaginationBar("routesPagination", currentPage, totalPages, totalItems, (np) => {
+        state.pages.routes = np;
+        loadRoutes();
+    });
+
     markSectionLoaded('routes');
 }
 
@@ -1251,10 +1340,15 @@ function renderFirewallFilter(data) {
     if (!data || data.length === 0) {
         if (hasPrevData('firewall-filter')) return;
         tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i data-lucide="shield" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada filter rule</div></div></td></tr>`;
+        renderPaginationBar("firewallFilterPagination", 1, 1, 0, () => {});
         return;
     }
 
-    tbody.innerHTML = data
+    const page = state.pages['firewall-filter'] || 1;
+    const { items, totalPages, currentPage, totalItems } = paginateData(data, page);
+    state.pages['firewall-filter'] = currentPage;
+
+    tbody.innerHTML = items
         .map((rule, i) => {
             const ruleId = rule['.id'] || rule.id || '';
             const isDisabled = rule.disabled === "true" || rule.disabled === true;
@@ -1273,6 +1367,13 @@ function renderFirewallFilter(data) {
             </tr>`;
         })
         .join("");
+
+    addTableLabels("firewallFilterTable");
+    renderPaginationBar("firewallFilterPagination", currentPage, totalPages, totalItems, (np) => {
+        state.pages['firewall-filter'] = np;
+        loadFirewall();
+    });
+
     markSectionLoaded('firewall-filter');
 }
 
@@ -1283,10 +1384,15 @@ function renderFirewallNat(data) {
     if (!data || data.length === 0) {
         if (hasPrevData('firewall-nat')) return;
         tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i data-lucide="shuffle" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada NAT rule</div></div></td></tr>`;
+        renderPaginationBar("firewallNatPagination", 1, 1, 0, () => {});
         return;
     }
 
-    tbody.innerHTML = data
+    const page = state.pages['firewall-nat'] || 1;
+    const { items, totalPages, currentPage, totalItems } = paginateData(data, page);
+    state.pages['firewall-nat'] = currentPage;
+
+    tbody.innerHTML = items
         .map((rule, i) => {
             const ruleId = rule['.id'] || rule.id || '';
             const isDisabled = rule.disabled === "true" || rule.disabled === true;
@@ -1305,6 +1411,13 @@ function renderFirewallNat(data) {
             </tr>`;
         })
         .join("");
+
+    addTableLabels("firewallNatTable");
+    renderPaginationBar("firewallNatPagination", currentPage, totalPages, totalItems, (np) => {
+        state.pages['firewall-nat'] = np;
+        loadFirewall();
+    });
+
     markSectionLoaded('firewall-nat');
 }
 
@@ -1505,12 +1618,17 @@ async function loadARP() {
     if (!data || data.length === 0) {
         if (hasPrevData('arp')) return;
         tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i data-lucide="radio" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada ARP entry</div></div></td></tr>`;
+        renderPaginationBar("arpPagination", 1, 1, 0, () => {});
         return;
     }
 
     updateNavBadge("arp", data.length);
 
-    tbody.innerHTML = data
+    const page = state.pages.arp || 1;
+    const { items, totalPages, currentPage, totalItems } = paginateData(data, page);
+    state.pages.arp = currentPage;
+
+    tbody.innerHTML = items
         .map((entry) => {
             const isComplete = entry.complete === "true" || entry.complete === true;
             const isIsolated = isolatedIps.includes(entry.address);
@@ -1525,6 +1643,13 @@ async function loadARP() {
             </tr>`;
         })
         .join("");
+
+    addTableLabels("arpTable");
+    renderPaginationBar("arpPagination", currentPage, totalPages, totalItems, (np) => {
+        state.pages.arp = np;
+        loadARP();
+    });
+
     markSectionLoaded('arp');
 }
 
@@ -1538,13 +1663,18 @@ async function loadLogs() {
     if (!data || data.length === 0) {
         if (hasPrevData('logs')) return;
         container.innerHTML = `<div class="empty-state"><i data-lucide="file-text" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada log</div></div>`;
+        renderPaginationBar("logsPagination", 1, 1, 0, () => {});
         return;
     }
 
     // Reverse to show newest first
     const reversed = [...data].reverse();
 
-    container.innerHTML = reversed
+    const page = state.pages.logs || 1;
+    const { items, totalPages, currentPage, totalItems } = paginateData(reversed, page);
+    state.pages.logs = currentPage;
+
+    container.innerHTML = items
         .map((log) => {
             const topics = (log.topics || "").toLowerCase();
             let logClass = "log-default";
@@ -1560,6 +1690,12 @@ async function loadLogs() {
             </div>`;
         })
         .join("");
+
+    renderPaginationBar("logsPagination", currentPage, totalPages, totalItems, (np) => {
+        state.pages.logs = np;
+        loadLogs();
+    });
+
     markSectionLoaded('logs');
 }
 
@@ -1574,12 +1710,17 @@ async function loadHotspot() {
         if (!data || data.length === 0) {
             if (hasPrevData('hotspot')) return;
             tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="wifi" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada user hotspot aktif</div></div></td></tr>`;
+            renderPaginationBar("hotspotPagination", 1, 1, 0, () => {});
             return;
         }
 
         updateNavBadge("hotspot", data.length);
 
-        tbody.innerHTML = data
+        const page = state.pages.hotspot || 1;
+        const { items, totalPages, currentPage, totalItems } = paginateData(data, page);
+        state.pages.hotspot = currentPage;
+
+        tbody.innerHTML = items
             .map((user) => {
                 return `<tr>
                     <td>${escapeHtml(user.user || "-")}</td>
@@ -1591,6 +1732,13 @@ async function loadHotspot() {
                 </tr>`;
             })
             .join("");
+
+        addTableLabels("hotspotTable");
+        renderPaginationBar("hotspotPagination", currentPage, totalPages, totalItems, (np) => {
+            state.pages.hotspot = np;
+            loadHotspot();
+        });
+
         markSectionLoaded('hotspot');
     } catch {
         const tbody = document.getElementById("hotspotTable");
@@ -1613,12 +1761,17 @@ async function loadIpAddresses() {
     if (!data || data.length === 0) {
         if (hasPrevData('ip-addresses')) return;
         tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="globe" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada IP address</div></div></td></tr>`;
+        renderPaginationBar("ipAddressPagination", 1, 1, 0, () => {});
         return;
     }
 
     updateNavBadge("ip-addresses", data.length);
 
-    tbody.innerHTML = data
+    const page = state.pages['ip-addresses'] || 1;
+    const { items, totalPages, currentPage, totalItems } = paginateData(data, page);
+    state.pages['ip-addresses'] = currentPage;
+
+    tbody.innerHTML = items
         .map((addr) => {
             const addrId = addr['.id'] || addr.id || '';
             const isDisabled = addr.disabled === "true" || addr.disabled === true;
@@ -1641,6 +1794,13 @@ async function loadIpAddresses() {
             </tr>`;
         })
         .join("");
+
+    addTableLabels("ipAddressTable");
+    renderPaginationBar("ipAddressPagination", currentPage, totalPages, totalItems, (np) => {
+        state.pages['ip-addresses'] = np;
+        loadIpAddresses();
+    });
+
     markSectionLoaded('ip-addresses');
 }
 
@@ -1758,8 +1918,13 @@ async function loadIpIsolation() {
         if (!isolatedIps || isolatedIps.length === 0) {
             if (hasPrevData('ip-isolation')) return;
             isolatedTable.innerHTML = `<tr><td colspan="3"><div class="empty-state"><i data-lucide="check-circle" style="width:24px;height:24px;color:#34d399;"></i><div class="empty-state-text">Tidak ada IP yang diisolasi</div></div></td></tr>`;
+            renderPaginationBar("isolatedPagination", 1, 1, 0, () => {});
         } else {
-            isolatedTable.innerHTML = isolatedIps
+            const page = state.pages.isolated || 1;
+            const { items, totalPages, currentPage, totalItems } = paginateData(isolatedIps, page);
+            state.pages.isolated = currentPage;
+
+            isolatedTable.innerHTML = items
                 .map((ip) => {
                     return `<tr>
                         <td><span class="mono">${escapeHtml(ip)}</span></td>
@@ -1772,6 +1937,12 @@ async function loadIpIsolation() {
                     </tr>`;
                 })
                 .join("");
+
+            addTableLabels("isolatedTable");
+            renderPaginationBar("isolatedPagination", currentPage, totalPages, totalItems, (np) => {
+                state.pages.isolated = np;
+                loadIpIsolation();
+            });
         }
     }
 
@@ -1781,8 +1952,13 @@ async function loadIpIsolation() {
         if (!dhcpData || dhcpData.length === 0) {
             if (hasPrevData('ip-isolation')) return;
             dhcpIsolateTable.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i data-lucide="list" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada DHCP client</div></div></td></tr>`;
+            renderPaginationBar("dhcpIsolatePagination", 1, 1, 0, () => {});
         } else {
-            dhcpIsolateTable.innerHTML = dhcpData
+            const page = state.pages.dhcpIsolate || 1;
+            const { items, totalPages, currentPage, totalItems } = paginateData(dhcpData, page);
+            state.pages.dhcpIsolate = currentPage;
+
+            dhcpIsolateTable.innerHTML = items
                 .map((lease) => {
                     const isBound = lease.status === "bound";
                     const badgeClass = isBound ? "badge-bound" : "badge-inactive";
@@ -1805,6 +1981,12 @@ async function loadIpIsolation() {
                     </tr>`;
                 })
                 .join("");
+
+            addTableLabels("dhcpIsolateTable");
+            renderPaginationBar("dhcpIsolatePagination", currentPage, totalPages, totalItems, (np) => {
+                state.pages.dhcpIsolate = np;
+                loadIpIsolation();
+            });
         }
     }
     markSectionLoaded('ip-isolation');
