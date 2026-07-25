@@ -1,9 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\MikrotikController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\MikrotikController;
+use Illuminate\Support\Facades\Route;
 
 // ─── Authentication Routes ───
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -12,23 +12,49 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // ─── Protected Routes ───
 Route::middleware('auth')->group(function () {
-    
+
     // View Routes
-    Route::get('/', function () { return view('pages.overview'); });
-    Route::get('/interfaces', function () { return view('pages.interfaces'); });
-    Route::get('/dhcp', function () { return view('pages.dhcp'); });
-    Route::get('/routes', function () { return view('pages.routes'); });
-    Route::get('/firewall', function () { return view('pages.firewall'); });
-    Route::get('/arp', function () { return view('pages.arp'); });
-    Route::get('/logs', function () { return view('pages.logs'); });
-    Route::get('/hotspot', function () { return view('pages.hotspot'); });
-    Route::get('/ip-addresses', function () { return view('pages.ip-addresses'); });
-    Route::get('/ip-isolation', function () { return view('pages.ip-isolation'); });
+    Route::get('/', function () {
+        return view('pages.overview');
+    });
+    Route::get('/interfaces', function () {
+        return view('pages.interfaces');
+    });
+    Route::get('/dhcp', function () {
+        return view('pages.dhcp');
+    });
+    Route::get('/routes', function () {
+        return view('pages.routes');
+    });
+    Route::get('/firewall', function () {
+        return view('pages.firewall');
+    });
+    Route::get('/arp', function () {
+        return view('pages.arp');
+    });
+    Route::get('/logs', function () {
+        return view('pages.logs');
+    });
+    Route::get('/hotspot', function () {
+        return view('pages.hotspot');
+    });
+    Route::get('/ip-addresses', function () {
+        return view('pages.ip-addresses');
+    });
+    Route::get('/ip-isolation', function () {
+        return view('pages.ip-isolation');
+    });
 
     // Billing View Routes
-    Route::get('/packages', function () { return view('pages.billing.packages'); });
-    Route::get('/customers', function () { return view('pages.billing.customers'); });
-    Route::get('/invoices', function () { return view('pages.billing.invoices'); });
+    Route::get('/packages', function () {
+        return view('pages.billing.packages');
+    });
+    Route::get('/customers', function () {
+        return view('pages.billing.customers');
+    });
+    Route::get('/invoices', function () {
+        return view('pages.billing.invoices');
+    });
 
     // API Routes
     Route::prefix('api')->group(function () {
@@ -92,4 +118,3 @@ Route::middleware('auth')->group(function () {
         Route::delete('/invoices/{id}', [BillingController::class, 'destroyInvoice']);
     });
 });
-

@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\MikrotikService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use App\Services\MikrotikService;
 
 class MikrotikController extends Controller
 {
     private function camelCaseKeys($array)
     {
-        if (!is_array($array)) {
+        if (! is_array($array)) {
             return $array;
         }
 
@@ -19,6 +19,7 @@ class MikrotikController extends Controller
             $camelKey = lcfirst(str_replace(' ', '', ucwords(str_replace('-', ' ', $key))));
             $result[$camelKey] = is_array($value) ? $this->camelCaseKeys($value) : $value;
         }
+
         return $result;
     }
 
@@ -26,7 +27,7 @@ class MikrotikController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => $this->camelCaseKeys($data)
+            'data' => $this->camelCaseKeys($data),
         ]);
     }
 
@@ -34,7 +35,7 @@ class MikrotikController extends Controller
     {
         return response()->json([
             'success' => false,
-            'error' => $message
+            'error' => $message,
         ], $code);
     }
 
@@ -46,18 +47,21 @@ class MikrotikController extends Controller
     public function router()
     {
         $data = Cache::get('mikrotik_data_resource', []);
+
         return $this->response($data[0] ?? null);
     }
 
     public function identity()
     {
         $data = Cache::get('mikrotik_data_identity', []);
+
         return $this->response($data[0] ?? null);
     }
 
     public function interfaces()
     {
         $data = Cache::get('mikrotik_data_interfaces', []);
+
         return $this->response($data);
     }
 
@@ -72,9 +76,10 @@ class MikrotikController extends Controller
             }
         }
 
-        if (!$iface) {
+        if (! $iface) {
             return response()->json(['success' => false, 'error' => 'Interface not found'], 404);
         }
+
         return $this->response($iface);
     }
 
@@ -85,49 +90,56 @@ class MikrotikController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $history
+            'data' => $history,
         ]);
     }
 
     public function dhcpLeases()
     {
         $data = Cache::get('mikrotik_data_dhcp', []);
+
         return $this->response($data);
     }
 
     public function routes()
     {
         $data = Cache::get('mikrotik_data_routes', []);
+
         return $this->response($data);
     }
 
     public function firewallFilter()
     {
         $data = Cache::get('mikrotik_data_fw_filter', []);
+
         return $this->response($data);
     }
 
     public function firewallNat()
     {
         $data = Cache::get('mikrotik_data_fw_nat', []);
+
         return $this->response($data);
     }
 
     public function arp()
     {
         $data = Cache::get('mikrotik_data_arp', []);
+
         return $this->response($data);
     }
 
     public function logs()
     {
         $data = Cache::get('mikrotik_data_logs', []);
+
         return $this->response($data);
     }
 
     public function hotspot()
     {
         $data = Cache::get('mikrotik_data_wireless', []);
+
         return $this->response($data);
     }
 
@@ -136,6 +148,7 @@ class MikrotikController extends Controller
     public function ipAddresses()
     {
         $data = Cache::get('mikrotik_data_ip_addresses', []);
+
         return $this->response($data);
     }
 
@@ -144,8 +157,9 @@ class MikrotikController extends Controller
     public function storeDhcpLease(Request $request)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->addDhcpLease($request->all());
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -155,8 +169,9 @@ class MikrotikController extends Controller
     public function updateDhcpLease(Request $request, $id)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->updateDhcpLease($id, $request->all());
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -166,8 +181,9 @@ class MikrotikController extends Controller
     public function destroyDhcpLease($id)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->deleteDhcpLease($id);
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -179,8 +195,9 @@ class MikrotikController extends Controller
     public function storeFirewallFilter(Request $request)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->addFirewallFilter($request->all());
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -190,8 +207,9 @@ class MikrotikController extends Controller
     public function updateFirewallFilter(Request $request, $id)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->updateFirewallFilter($id, $request->all());
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -201,8 +219,9 @@ class MikrotikController extends Controller
     public function destroyFirewallFilter($id)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->deleteFirewallFilter($id);
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -214,8 +233,9 @@ class MikrotikController extends Controller
     public function storeFirewallNat(Request $request)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->addFirewallNat($request->all());
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -225,8 +245,9 @@ class MikrotikController extends Controller
     public function updateFirewallNat(Request $request, $id)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->updateFirewallNat($id, $request->all());
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -236,8 +257,9 @@ class MikrotikController extends Controller
     public function destroyFirewallNat($id)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->deleteFirewallNat($id);
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -249,8 +271,9 @@ class MikrotikController extends Controller
     public function storeIpAddress(Request $request)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->addIpAddress($request->all());
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -260,8 +283,9 @@ class MikrotikController extends Controller
     public function updateIpAddress(Request $request, $id)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->updateIpAddress($id, $request->all());
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -271,8 +295,9 @@ class MikrotikController extends Controller
     public function destroyIpAddress($id)
     {
         try {
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $result = $mikrotik->deleteIpAddress($id);
+
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -289,8 +314,9 @@ class MikrotikController extends Controller
                 return $this->error('IP address is required', 422);
             }
 
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $mikrotik->isolateIp($ip);
+
             return response()->json(['success' => true, 'message' => "IP {$ip} telah diisolasi"]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -305,8 +331,9 @@ class MikrotikController extends Controller
                 return $this->error('IP address is required', 422);
             }
 
-            $mikrotik = new MikrotikService();
+            $mikrotik = new MikrotikService;
             $mikrotik->unisolateIp($ip);
+
             return response()->json(['success' => true, 'message' => "IP {$ip} telah diunisolasi"]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -317,6 +344,7 @@ class MikrotikController extends Controller
     {
         try {
             $data = Cache::get('mikrotik_data_isolated_ips', []);
+
             return response()->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
@@ -327,7 +355,19 @@ class MikrotikController extends Controller
     {
         try {
             $data = Cache::get('mikrotik_data_hotspot_active', []);
+
             return $this->response($data);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
+    }
+
+    public function dns()
+    {
+        try {
+            $data = Cache::get('mikrotik_data_dns', []);
+
+            return $this->response($data[0] ?? null);
         } catch (\Exception $e) {
             return $this->error($e->getMessage());
         }

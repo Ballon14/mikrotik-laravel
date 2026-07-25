@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Package;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\Package;
 use Illuminate\Http\Request;
 
 class BillingController extends Controller
@@ -14,7 +14,7 @@ class BillingController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => Package::orderBy('id', 'desc')->get()
+            'data' => Package::orderBy('id', 'desc')->get(),
         ]);
     }
 
@@ -28,6 +28,7 @@ class BillingController extends Controller
         ]);
 
         Package::create($validated);
+
         return response()->json(['success' => true]);
     }
 
@@ -42,12 +43,14 @@ class BillingController extends Controller
         ]);
 
         $package->update($validated);
+
         return response()->json(['success' => true]);
     }
 
     public function destroyPackage($id)
     {
         Package::findOrFail($id)->delete();
+
         return response()->json(['success' => true]);
     }
 
@@ -55,9 +58,10 @@ class BillingController extends Controller
     public function customers()
     {
         $customers = Customer::with('package')->orderBy('id', 'desc')->get();
+
         return response()->json([
             'success' => true,
-            'data' => $customers
+            'data' => $customers,
         ]);
     }
 
@@ -74,6 +78,7 @@ class BillingController extends Controller
         ]);
 
         Customer::create($validated);
+
         return response()->json(['success' => true]);
     }
 
@@ -91,12 +96,14 @@ class BillingController extends Controller
         ]);
 
         $customer->update($validated);
+
         return response()->json(['success' => true]);
     }
 
     public function destroyCustomer($id)
     {
         Customer::findOrFail($id)->delete();
+
         return response()->json(['success' => true]);
     }
 
@@ -104,9 +111,10 @@ class BillingController extends Controller
     public function invoices()
     {
         $invoices = Invoice::with('customer')->orderBy('id', 'desc')->get();
+
         return response()->json([
             'success' => true,
-            'data' => $invoices
+            'data' => $invoices,
         ]);
     }
 
@@ -125,6 +133,7 @@ class BillingController extends Controller
         }
 
         Invoice::create($validated);
+
         return response()->json(['success' => true]);
     }
 
@@ -146,12 +155,14 @@ class BillingController extends Controller
         }
 
         $invoice->update($validated);
+
         return response()->json(['success' => true]);
     }
 
     public function destroyInvoice($id)
     {
         Invoice::findOrFail($id)->delete();
+
         return response()->json(['success' => true]);
     }
 }

@@ -1,4 +1,8 @@
 // Make these available globally for app.js to call
+function esc(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 window.loadPackages = async function() {
     try {
         const res = await fetch('/api/packages');
@@ -15,12 +19,12 @@ window.loadPackages = async function() {
         tbody.innerHTML = data.data.map(p => `
             <tr>
                 <td>${p.id}</td>
-                <td><strong>${p.name}</strong></td>
+                <td><strong>${esc(p.name)}</strong></td>
                 <td>Rp ${Number(p.price).toLocaleString('id-ID')}</td>
-                <td>${p.speed || '-'}</td>
-                <td>${p.description || '-'}</td>
+                <td>${esc(p.speed || '-')}</td>
+                <td>${esc(p.description || '-')}</td>
                 <td>
-                    <button class="btn-edit" onclick="editPackage(${p.id}, '${p.name}', '${p.price}', '${p.speed || ''}', '${p.description || ''}')">Edit</button>
+                    <button class="btn-edit" onclick="editPackage(${p.id},'${esc(p.name)}','${esc(p.price)}','${esc(p.speed || '')}','${esc(p.description || '')}')">Edit</button>
                     <button class="btn-delete" onclick="deletePackage(${p.id})">Hapus</button>
                 </td>
             </tr>

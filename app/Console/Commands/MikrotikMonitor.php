@@ -2,44 +2,46 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Services\RouterosAPI;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
 class MikrotikMonitor extends Command
 {
     protected $signature = 'mikrotik:monitor';
+
     protected $description = 'Background daemon to continuously fetch data from MikroTik and store it in Cache';
 
     private $api;
 
     public function handle()
     {
-        $this->info("Starting MikroTik Monitor Daemon...");
+        $this->info('Starting MikroTik Monitor Daemon...');
 
-        $host = env('MIKROTIK_HOST', '10.10.10.1');
-        $user = env('MIKROTIK_USER', 'iqbal');
-        $password = env('MIKROTIK_PASSWORD', 'iqbal123');
+        $host = config('mikrotik.host');
+        $user = config('mikrotik.user');
+        $password = config('mikrotik.password');
 
-        $this->api = new RouterosAPI();
+        $this->api = new RouterosAPI;
         $this->api->timeout = 5;
-        
+
         while (true) {
             try {
-                if (!$this->api->connect($host, $user, $password)) {
-                    $this->error("Failed to connect. Retrying in 5 seconds...");
+                if (! $this->api->connect($host, $user, $password)) {
+                    $this->error('Failed to connect. Retrying in 5 seconds...');
                     sleep(5);
+
                     continue;
                 }
-                
-                $this->info("Connected to MikroTik at " . now()->format('Y-m-d H:i:s'));
-                
+
+                $this->info('Connected to MikroTik at '.now()->format('Y-m-d H:i:s'));
+
                 $counter = 0;
                 while (true) {
                     // Fast cycle data (every 2 seconds)
                     $this->fetchData('/system/resource/print', 'mikrotik_data_resource');
                     $this->fetchData('/interface/print', 'mikrotik_data_interfaces');
-                    
+
                     // Update historical traffic data
                     $this->updateTrafficHistory();
 
@@ -53,6 +55,7 @@ class MikrotikMonitor extends Command
                         $this->fetchData('/ip/arp/print', 'mikrotik_data_arp');
                         $this->fetchData('/interface/wireless/registration-table/print', 'mikrotik_data_wireless');
                         $this->fetchData('/ip/address/print', 'mikrotik_data_ip_addresses');
+                        $this->fetchData('/ip/dns/print', 'mikrotik_data_dns');
 
                         // Fetch isolated IPs from firewall filter rules
                         $this->updateIsolatedIps();
@@ -73,7 +76,7 @@ class MikrotikMonitor extends Command
                     sleep(2);
                 }
             } catch (\Exception $e) {
-                $this->error("Connection dropped: " . $e->getMessage());
+                $this->error('Connection dropped: '.$e->getMessage());
                 // Force disconnect and try again
                 @$this->api->disconnect();
                 sleep(5);
@@ -93,10 +96,12 @@ class MikrotikMonitor extends Command
     {
         $interfaces = Cache::get('mikrotik_data_interfaces', []);
         $now = (int) round(microtime(true) * 1000);
-        
+
         foreach ($interfaces as $iface) {
             $name = $iface['name'] ?? null;
-            if (!$name) continue;
+            if (! $name) {
+                continue;
+            }
 
             $rxBytes = (float) ($iface['rx-byte'] ?? 0);
             $txBytes = (float) ($iface['tx-byte'] ?? 0);
@@ -140,7 +145,7 @@ class MikrotikMonitor extends Command
                 $comment = $rule['comment'] ?? '';
                 if (str_starts_with($comment, 'ISOLASI_IP::')) {
                     $ip = substr($comment, strlen('ISOLASI_IP::'));
-                    if (!in_array($ip, $isolated)) {
+                    if (! in_array($ip, $isolated)) {
                         $isolated[] = $ip;
                     }
                 }
@@ -150,4 +155,3 @@ class MikrotikMonitor extends Command
         Cache::put('mikrotik_data_isolated_ips', $isolated, 30);
     }
 }
-

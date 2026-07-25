@@ -76,8 +76,6 @@
    Dark mode, glassmorphism, premium networking aesthetic
    ═══════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-
 /* ─── CSS Variables ─── */
 :root {
     --bg-primary: #0a0e1a;
@@ -133,50 +131,6 @@
 
 html {
     scroll-behavior: smooth;
-}
-
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    line-height: 1.6;
-    overflow-x: hidden;
-    min-height: 100vh;
-}
-
-/* Animated background mesh */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background:
-        radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 50%, rgba(14, 165, 233, 0.04) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-/* ─── Scrollbar ─── */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(56, 189, 248, 0.2);
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(56, 189, 248, 0.4);
 }
 
 /* ─── Layout ─── */
@@ -1389,7 +1343,8 @@ body::before {
     animation: fadeIn 0.2s ease;
 }
 
-.crud-modal.show {
+.crud-modal.show,
+.crud-modal.active {
     display: flex;
 }
 
@@ -1687,7 +1642,8 @@ body::before {
     align-items: center;
 }
 
-.confirm-modal.show {
+.confirm-modal.show,
+.confirm-modal.active {
     display: flex;
 }
 

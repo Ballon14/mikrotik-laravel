@@ -12,6 +12,7 @@ class AuthController extends Controller
         if (Auth::check()) {
             return redirect('/');
         }
+
         return view('pages.login');
     }
 
@@ -24,12 +25,13 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+
             return response()->json(['success' => true]);
         }
 
         return response()->json([
             'success' => false,
-            'message' => 'Email atau password salah.'
+            'message' => 'Email atau password salah.',
         ], 401);
     }
 
@@ -38,7 +40,7 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         return redirect('/login');
     }
 }

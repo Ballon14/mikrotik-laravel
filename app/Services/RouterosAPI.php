@@ -8,43 +8,48 @@ namespace App\Services;
 class RouterosAPI
 {
     public $debug = false;
+
     public $connected = false;
+
     public $port = 8728;
+
     public $timeout = 3;
+
     public $attempts = 5;
+
     public $delay = 3;
+
     public $error_no;
+
     public $error_str;
 
     private $socket;
 
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     public function connect($ip, $login, $password)
     {
         for ($ATTEMPT = 1; $ATTEMPT <= $this->attempts; $ATTEMPT++) {
             $this->connected = false;
             $this->error_no = 0;
-            $this->error_str = "";
-            
+            $this->error_str = '';
+
             $this->socket = @fsockopen($ip, $this->port, $this->error_no, $this->error_str, $this->timeout);
-            
+
             if ($this->socket) {
                 stream_set_timeout($this->socket, $this->timeout);
                 $this->write('/login', false);
-                $this->write('=name=' . $login, false);
-                $this->write('=password=' . $password);
+                $this->write('=name='.$login, false);
+                $this->write('=password='.$password);
                 $RESPONSE = $this->read(false);
-                
+
                 if (isset($RESPONSE[0]) && $RESPONSE[0] === '!done') {
                     // Check if it's the old MD5 challenge method
                     $MATCHES = [];
                     if (isset($RESPONSE[1]) && preg_match('/^=ret=(.*)$/', $RESPONSE[1], $MATCHES)) {
                         $this->write('/login', false);
-                        $this->write('=name=' . $login, false);
-                        $this->write('=response=00' . md5(chr(0) . $password . pack('H*', $MATCHES[1])));
+                        $this->write('=name='.$login, false);
+                        $this->write('=response=00'.md5(chr(0).$password.pack('H*', $MATCHES[1])));
                         $RESPONSE = $this->read(false);
                         if (isset($RESPONSE[0]) && $RESPONSE[0] === '!done') {
                             $this->connected = true;
@@ -60,7 +65,7 @@ class RouterosAPI
             }
             sleep($this->delay);
         }
-        
+
         return $this->connected;
     }
 
@@ -74,24 +79,24 @@ class RouterosAPI
 
     public function comm($com, $arr = [])
     {
-        if (!$this->connected) {
+        if (! $this->connected) {
             return false;
         }
-        
-        $this->write($com, !empty($arr) ? false : true);
-        
-        if (!empty($arr)) {
+
+        $this->write($com, ! empty($arr) ? false : true);
+
+        if (! empty($arr)) {
             $count = count($arr);
             $i = 0;
             foreach ($arr as $k => $v) {
                 $i++;
                 $this->write(
-                    ($k[0] == '?' ? '' : '=') . $k . '=' . $v,
+                    ($k[0] == '?' ? '' : '=').$k.'='.$v,
                     ($i == $count) ? true : false
                 );
             }
         }
-        
+
         return $this->read();
     }
 
@@ -101,22 +106,22 @@ class RouterosAPI
             echo "Write: $command\n";
         }
         $length = strlen($command);
-        
+
         if ($length < 0x80) {
             fwrite($this->socket, chr($length));
         } elseif ($length < 0x4000) {
             $length |= 0x8000;
-            fwrite($this->socket, chr(($length >> 8) & 0xFF) . chr($length & 0xFF));
+            fwrite($this->socket, chr(($length >> 8) & 0xFF).chr($length & 0xFF));
         } elseif ($length < 0x200000) {
             $length |= 0xC00000;
-            fwrite($this->socket, chr(($length >> 16) & 0xFF) . chr(($length >> 8) & 0xFF) . chr($length & 0xFF));
+            fwrite($this->socket, chr(($length >> 16) & 0xFF).chr(($length >> 8) & 0xFF).chr($length & 0xFF));
         } elseif ($length < 0x10000000) {
             $length |= 0xE0000000;
-            fwrite($this->socket, chr(($length >> 24) & 0xFF) . chr(($length >> 16) & 0xFF) . chr(($length >> 8) & 0xFF) . chr($length & 0xFF));
+            fwrite($this->socket, chr(($length >> 24) & 0xFF).chr(($length >> 16) & 0xFF).chr(($length >> 8) & 0xFF).chr($length & 0xFF));
         } elseif ($length >= 0x10000000) {
-            fwrite($this->socket, chr(0xF0) . chr(($length >> 24) & 0xFF) . chr(($length >> 16) & 0xFF) . chr(($length >> 8) & 0xFF) . chr($length & 0xFF));
+            fwrite($this->socket, chr(0xF0).chr(($length >> 24) & 0xFF).chr(($length >> 16) & 0xFF).chr(($length >> 8) & 0xFF).chr($length & 0xFF));
         }
-        
+
         fwrite($this->socket, $command);
         if ($end) {
             fwrite($this->socket, chr(0));
@@ -126,9 +131,11 @@ class RouterosAPI
     private function readWord()
     {
         $byteStr = fread($this->socket, 1);
-        if ($byteStr === false || strlen($byteStr) === 0) return '';
+        if ($byteStr === false || strlen($byteStr) === 0) {
+            return '';
+        }
         $byte = ord($byteStr);
-        
+
         $length = 0;
         if ($byte & 0x80) {
             if (($byte & 0xC0) == 0x80) {
@@ -145,19 +152,23 @@ class RouterosAPI
         }
 
         if ($length > 0) {
-            $ret = "";
+            $ret = '';
             $ro = 0;
             while ($ro < $length) {
                 $chunk = fread($this->socket, $length - $ro);
-                if ($chunk === false || strlen($chunk) === 0) break;
+                if ($chunk === false || strlen($chunk) === 0) {
+                    break;
+                }
                 $ret .= $chunk;
                 $ro += strlen($chunk);
             }
             if ($this->debug) {
                 echo "Read: $ret\n";
             }
+
             return $ret;
         }
+
         return '';
     }
 
@@ -165,10 +176,10 @@ class RouterosAPI
     {
         $RESPONSE = [];
         $receivedDone = false;
-        
+
         while (true) {
             $word = $this->readWord();
-            
+
             if ($word === '') {
                 if ($receivedDone) {
                     break;
@@ -180,11 +191,11 @@ class RouterosAPI
                 }
             }
         }
-        
+
         if ($parse) {
             return $this->parseResponse($RESPONSE);
         }
-        
+
         return $RESPONSE;
     }
 
@@ -199,6 +210,7 @@ class RouterosAPI
                 $result[$i][$matches[1]] = $matches[2];
             }
         }
+
         return array_values($result);
     }
 }
