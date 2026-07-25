@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', '📋 DHCP <span>Leases</span>')
+@section('title', 'DHCP Leases')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3><span class="icon">📋</span> DHCP Server Leases</h3>
+        <h3><i data-lucide="list" style="width:16px;height:16px;"></i> DHCP Server Leases</h3>
         <button class="btn-action btn-add" id="btnAddDhcp" title="Add DHCP Lease">
-            <span>＋</span> Add Lease
+            <i data-lucide="plus" style="width:14px;height:14px;"></i> Add Lease
         </button>
     </div>
     <div class="card-body">
@@ -25,19 +25,18 @@
                     </tr>
                 </thead>
                 <tbody id="dhcpTable">
-                    <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading...</div></div></td></tr>
+                    <tr><td colspan="7"><div class="empty-state"><i data-lucide="loader-2" class="icon-spin"></i><div class="empty-state-text">Loading...</div></div></td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Add/Edit DHCP Modal -->
 <div class="crud-modal" id="dhcpModal">
     <div class="crud-modal-content">
         <div class="crud-modal-header">
             <h3 id="dhcpModalTitle">Add DHCP Lease</h3>
-            <button class="crud-modal-close" id="dhcpModalClose">✕</button>
+            <button class="crud-modal-close" id="dhcpModalClose"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
         </div>
         <form id="dhcpForm" class="crud-form">
             <input type="hidden" id="dhcpEditId" value="">
@@ -65,10 +64,9 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
 <div class="confirm-modal" id="confirmModal">
     <div class="confirm-modal-content">
-        <div class="confirm-icon">⚠️</div>
+        <i data-lucide="alert-triangle" style="width:40px;height:40px;color:#fbbf24;margin-bottom:12px;"></i>
         <h3>Konfirmasi Hapus</h3>
         <p id="confirmMessage">Apakah Anda yakin ingin menghapus item ini?</p>
         <div class="confirm-actions">

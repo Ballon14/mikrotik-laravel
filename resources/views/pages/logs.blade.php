@@ -1,16 +1,16 @@
 @extends('layouts.app')
 
-@section('title', '📜 System Logs')
+@section('title', 'System Logs')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3><span class="icon">📜</span> System Logs</h3>
-        <span style="font-size:11px; color:var(--text-muted);">50 terbaru</span>
+        <h3><i data-lucide="file-text" style="width:16px;height:16px;"></i> System Logs</h3>
+        <span class="log-info-badge">50 terbaru</span>
     </div>
-    <div class="card-body" style="max-height:600px; overflow-y:auto; padding:8px;">
+    <div class="card-body card-body-logs">
         <div id="logsContainer">
-            <div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading...</div></div>
+            <div class="empty-state"><i data-lucide="loader-2" class="icon-spin"></i><div class="empty-state-text">Loading...</div></div>
         </div>
     </div>
 </div>

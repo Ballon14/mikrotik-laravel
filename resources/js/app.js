@@ -208,6 +208,7 @@ async function loadSectionData(section) {
         updateConnectionStatus(false, err.message);
         showToast("Koneksi ke MikroTik gagal: " + err.message, "error");
     } finally {
+        lucide.createIcons();
         if (spinner) spinner.classList.remove("active");
         state.isRefreshing = false;
     }
@@ -514,7 +515,7 @@ async function loadInterfaces() {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">🔌</div><div class="empty-state-text">Tidak ada interface ditemukan</div></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="ethernet-port" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada interface ditemukan</div></div></td></tr>`;
         return;
     }
 
@@ -563,13 +564,13 @@ async function openInterfaceModal(name) {
     if (!modal || !bodyEl) return;
 
     nameEl.textContent = name;
-    bodyEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading...</div></div>`;
+    bodyEl.innerHTML = `<div class="empty-state"><i data-lucide="loader-2" class="icon-spin" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Loading...</div></div>`;
     modal.classList.add("show");
 
     try {
         const iface = await apiFetch(`/api/interface/${encodeURIComponent(name)}`);
         if (!iface) {
-            bodyEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-text">Interface not found</div></div>`;
+            bodyEl.innerHTML = `<div class="empty-state"><i data-lucide="alert-circle" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Interface not found</div></div>`;
             return;
         }
 
@@ -608,7 +609,7 @@ async function openInterfaceModal(name) {
                 </div>
             </div>
 
-            <div class="modal-section-title">📊 Traffic Statistics</div>
+            <div class="modal-section-title"><i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i> Traffic Statistics</div>
             <div class="modal-stats-row">
                 <div class="modal-stat">
                     <div class="label">TX (Upload)</div>
@@ -628,7 +629,7 @@ async function openInterfaceModal(name) {
                 </div>
             </div>
 
-            <div class="modal-section-title">⚠️ Errors & Drops</div>
+            <div class="modal-section-title"><i data-lucide="alert-triangle" style="width:14px;height:14px;"></i> Errors & Drops</div>
             <div class="modal-stats-row">
                 <div class="modal-stat">
                     <div class="label">TX Errors</div>
@@ -656,7 +657,7 @@ async function openInterfaceModal(name) {
                 </div>
             </div>
 
-            <div class="modal-section-title">🕒 Link History</div>
+            <div class="modal-section-title"><i data-lucide="clock" style="width:14px;height:14px;"></i> Link History</div>
             <div class="modal-stats-row">
                 <div class="modal-stat">
                     <div class="label">Last Link Up</div>
@@ -669,7 +670,7 @@ async function openInterfaceModal(name) {
             </div>
         `;
     } catch (err) {
-        bodyEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-text">${escapeHtml(err.message)}</div></div>`;
+        bodyEl.innerHTML = `<div class="empty-state"><i data-lucide="alert-circle" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">${escapeHtml(err.message)}</div></div>`;
     }
 }
 
@@ -716,7 +717,7 @@ async function loadDHCP() {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Tidak ada DHCP lease</div></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="list" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada DHCP lease</div></div></td></tr>`;
         return;
     }
 
@@ -734,18 +735,18 @@ async function loadDHCP() {
                 <td>${escapeHtml(lease.hostName || "-")}</td>
                 <td>
                     ${escapeHtml(lease.address || "-")}
-                    ${isIsolated ? '<span class="badge badge-isolated">🔒 Isolated</span>' : ''}
+                    ${isIsolated ? '<span class="badge badge-isolated"><i data-lucide="lock" style="width:10px;height:10px;"></i> Isolated</span>' : ''}
                 </td>
                 <td>${escapeHtml(lease.macAddress || "-")}</td>
                 <td>${escapeHtml(lease.server || "-")}</td>
                 <td><span class="badge ${badgeClass}"><span class="badge-dot"></span>${badgeText}</span></td>
                 <td>${escapeHtml(lease.lastSeen || "-")}</td>
                 <td class="actions-cell">
-                    <button class="btn-icon btn-edit" title="Edit" onclick="editDhcpLease('${escapeHtml(leaseId)}', ${JSON.stringify(lease).replace(/'/g, "\\'").replace(/"/g, '&quot;')})">✏️</button>
-                    <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteDhcpLease('${escapeHtml(leaseId)}')">🗑️</button>
+                    <button class="btn-icon btn-edit" title="Edit" onclick="editDhcpLease('${escapeHtml(leaseId)}', ${JSON.stringify(lease).replace(/'/g, "\\'").replace(/"/g, '&quot;')})"><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                    <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteDhcpLease('${escapeHtml(leaseId)}')"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                     ${!isIsolated
-                        ? `<button class="btn-icon btn-isolate" title="Isolate IP" onclick="quickIsolate('${escapeHtml(lease.address)}')">🔒</button>`
-                        : `<button class="btn-icon btn-unisolate" title="Unisolate IP" onclick="quickUnisolate('${escapeHtml(lease.address)}')">🔓</button>`
+                        ? `                    <button class="btn-icon btn-isolate" title="Isolate IP" onclick="quickIsolate('${escapeHtml(lease.address)}')"><i data-lucide="lock" style="width:14px;height:14px;"></i></button>`
+                        : `<button class="btn-icon btn-unisolate" title="Unisolate IP" onclick="quickUnisolate('${escapeHtml(lease.address)}')"><i data-lucide="lock-open" style="width:14px;height:14px;"></i></button>`
                     }
                 </td>
             </tr>`;
@@ -856,7 +857,7 @@ async function loadRoutes() {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">🗺️</div><div class="empty-state-text">Tidak ada route</div></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i data-lucide="map" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada route</div></div></td></tr>`;
         return;
     }
 
@@ -897,7 +898,7 @@ function renderFirewallFilter(data) {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">🛡️</div><div class="empty-state-text">Tidak ada filter rule</div></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i data-lucide="shield" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada filter rule</div></div></td></tr>`;
         return;
     }
 
@@ -914,8 +915,8 @@ function renderFirewallFilter(data) {
                 <td><span class="badge ${rule.action === 'drop' || rule.action === 'reject' ? 'badge-error' : 'badge-active'}">${escapeHtml(rule.action || "-")}</span></td>
                 <td class="comment-cell">${escapeHtml(rule.comment || "-")}</td>
                 <td class="actions-cell">
-                    <button class="btn-icon btn-edit" title="Edit" onclick='editFirewallFilter("${escapeHtml(ruleId)}", ${JSON.stringify(rule).replace(/'/g, "\\'").replace(/"/g, "&quot;")})'>✏️</button>
-                    <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteFirewallFilter('${escapeHtml(ruleId)}')">🗑️</button>
+                    <button class="btn-icon btn-edit" title="Edit" onclick='editFirewallFilter("${escapeHtml(ruleId)}", ${JSON.stringify(rule).replace(/'/g, "\\'").replace(/"/g, "&quot;")})'><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                    <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteFirewallFilter('${escapeHtml(ruleId)}')"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                 </td>
             </tr>`;
         })
@@ -927,7 +928,7 @@ function renderFirewallNat(data) {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">🔀</div><div class="empty-state-text">Tidak ada NAT rule</div></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i data-lucide="shuffle" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada NAT rule</div></div></td></tr>`;
         return;
     }
 
@@ -944,8 +945,8 @@ function renderFirewallNat(data) {
                 <td><span class="badge badge-active">${escapeHtml(rule.action || "-")}</span></td>
                 <td class="comment-cell">${escapeHtml(rule.comment || "-")}</td>
                 <td class="actions-cell">
-                    <button class="btn-icon btn-edit" title="Edit" onclick='editFirewallNat("${escapeHtml(ruleId)}", ${JSON.stringify(rule).replace(/'/g, "\\'").replace(/"/g, "&quot;")})'>✏️</button>
-                    <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteFirewallNat('${escapeHtml(ruleId)}')">🗑️</button>
+                    <button class="btn-icon btn-edit" title="Edit" onclick='editFirewallNat("${escapeHtml(ruleId)}", ${JSON.stringify(rule).replace(/'/g, "\\'").replace(/"/g, "&quot;")})'><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                    <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteFirewallNat('${escapeHtml(ruleId)}')"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                 </td>
             </tr>`;
         })
@@ -1139,7 +1140,7 @@ async function loadARP() {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon">📡</div><div class="empty-state-text">Tidak ada ARP entry</div></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i data-lucide="radio" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada ARP entry</div></div></td></tr>`;
         return;
     }
 
@@ -1152,7 +1153,7 @@ async function loadARP() {
             return `<tr>
                 <td>
                     ${escapeHtml(entry.address || "-")}
-                    ${isIsolated ? '<span class="badge badge-isolated">🔒 Isolated</span>' : ''}
+                    ${isIsolated ? '<span class="badge badge-isolated"><i data-lucide="lock" style="width:10px;height:10px;"></i> Isolated</span>' : ''}
                 </td>
                 <td>${escapeHtml(entry.macAddress || "-")}</td>
                 <td>${escapeHtml(entry.interface || "-")}</td>
@@ -1170,7 +1171,7 @@ async function loadLogs() {
     if (!container) return;
 
     if (!data || data.length === 0) {
-        container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📜</div><div class="empty-state-text">Tidak ada log</div></div>`;
+        container.innerHTML = `<div class="empty-state"><i data-lucide="file-text" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada log</div></div>`;
         return;
     }
 
@@ -1204,7 +1205,7 @@ async function loadHotspot() {
         if (!tbody) return;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">📶</div><div class="empty-state-text">Tidak ada user hotspot aktif</div></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="wifi" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada user hotspot aktif</div></div></td></tr>`;
             return;
         }
 
@@ -1225,7 +1226,7 @@ async function loadHotspot() {
     } catch {
         const tbody = document.getElementById("hotspotTable");
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Hotspot tidak tersedia di router ini</div><div class="empty-state-sub">Fitur ini memerlukan konfigurasi Hotspot di MikroTik</div></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="alert-triangle" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Hotspot tidak tersedia di router ini</div><div class="empty-state-sub">Fitur ini memerlukan konfigurasi Hotspot di MikroTik</div></div></td></tr>`;
         }
     }
 }
@@ -1241,7 +1242,7 @@ async function loadIpAddresses() {
     await populateInterfaceSelect();
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">🌐</div><div class="empty-state-text">Tidak ada IP address</div></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="globe" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada IP address</div></div></td></tr>`;
         return;
     }
 
@@ -1263,8 +1264,8 @@ async function loadIpAddresses() {
                 <td class="comment-cell">${escapeHtml(addr.comment || "-")}</td>
                 <td class="actions-cell">
                     ${!isDynamic ? `
-                        <button class="btn-icon btn-edit" title="Edit" onclick='editIpAddress("${escapeHtml(addrId)}", ${JSON.stringify(addr).replace(/'/g, "\\'").replace(/"/g, "&quot;")})'>✏️</button>
-                        <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteIpAddress('${escapeHtml(addrId)}')">🗑️</button>
+                        <button class="btn-icon btn-edit" title="Edit" onclick='editIpAddress("${escapeHtml(addrId)}", ${JSON.stringify(addr).replace(/'/g, "\\'").replace(/"/g, "&quot;")})'><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                        <button class="btn-icon btn-delete-icon" title="Delete" onclick="deleteIpAddress('${escapeHtml(addrId)}')"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                     ` : '<span class="text-muted">—</span>'}
                 </td>
             </tr>`;
@@ -1380,17 +1381,17 @@ async function loadIpIsolation() {
 
     if (isolatedTable) {
         if (!isolatedIps || isolatedIps.length === 0) {
-            isolatedTable.innerHTML = `<tr><td colspan="3"><div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-text">Tidak ada IP yang diisolasi</div></div></td></tr>`;
+            isolatedTable.innerHTML = `<tr><td colspan="3"><div class="empty-state"><i data-lucide="check-circle" style="width:24px;height:24px;color:#34d399;"></i><div class="empty-state-text">Tidak ada IP yang diisolasi</div></div></td></tr>`;
         } else {
             isolatedTable.innerHTML = isolatedIps
                 .map((ip) => {
                     return `<tr>
                         <td><span class="mono">${escapeHtml(ip)}</span></td>
-                        <td><span class="badge badge-isolated">🔒 Isolated</span></td>
+                        <td><span class="badge badge-isolated"><i data-lucide="lock" style="width:10px;height:10px;"></i> Isolated</span></td>
                         <td class="actions-cell">
-                            <button class="btn-action btn-unisolate-action" onclick="quickUnisolate('${escapeHtml(ip)}')">
-                                🔓 Unisolasi
-                            </button>
+                                <button class="btn-action btn-unisolate-action" onclick="quickUnisolate('${escapeHtml(ip)}')">
+                                    <i data-lucide="lock-open" style="width:14px;height:14px;"></i> Unisolasi
+                                </button>
                         </td>
                     </tr>`;
                 })
@@ -1402,7 +1403,7 @@ async function loadIpIsolation() {
     const dhcpIsolateTable = document.getElementById("dhcpIsolateTable");
     if (dhcpIsolateTable) {
         if (!dhcpData || dhcpData.length === 0) {
-            dhcpIsolateTable.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Tidak ada DHCP client</div></div></td></tr>`;
+            dhcpIsolateTable.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i data-lucide="list" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Tidak ada DHCP client</div></div></td></tr>`;
         } else {
             dhcpIsolateTable.innerHTML = dhcpData
                 .map((lease) => {
@@ -1416,12 +1417,12 @@ async function loadIpIsolation() {
                         <td>${escapeHtml(lease.macAddress || "-")}</td>
                         <td>
                             <span class="badge ${badgeClass}"><span class="badge-dot"></span>${lease.status || "unknown"}</span>
-                            ${isIsolated ? '<span class="badge badge-isolated">🔒</span>' : ''}
+                            ${isIsolated ? '<span class="badge badge-isolated"><i data-lucide="lock" style="width:10px;height:10px;"></i></span>' : ''}
                         </td>
                         <td class="actions-cell">
                             ${!isIsolated
-                                ? `<button class="btn-action btn-isolate-action" onclick="quickIsolate('${escapeHtml(lease.address)}')">🔒 Isolasi</button>`
-                                : `<button class="btn-action btn-unisolate-action" onclick="quickUnisolate('${escapeHtml(lease.address)}')">🔓 Unisolasi</button>`
+                                ? `<button class="btn-action btn-isolate-action" onclick="quickIsolate('${escapeHtml(lease.address)}')"><i data-lucide="lock" style="width:14px;height:14px;"></i> Isolasi</button>`
+                                : `<button class="btn-action btn-unisolate-action" onclick="quickUnisolate('${escapeHtml(lease.address)}')"><i data-lucide="lock-open" style="width:14px;height:14px;"></i> Unisolasi</button>`
                             }
                         </td>
                     </tr>`;

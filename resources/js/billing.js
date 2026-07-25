@@ -12,7 +12,7 @@ window.loadPackages = async function() {
         if (!tbody) return;
 
         if (!data.success || data.data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">Belum ada paket</div></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada paket</div></div></td></tr>`;
             return;
         }
 
@@ -29,6 +29,7 @@ window.loadPackages = async function() {
                 </td>
             </tr>
         `).join('');
+        lucide.createIcons();
     } catch (e) {
         console.error(e);
     }
@@ -43,7 +44,7 @@ window.loadCustomers = async function() {
         if (!tbody) return;
 
         if (!data.success || data.data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">Belum ada pelanggan</div></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada pelanggan</div></div></td></tr>`;
             return;
         }
 
@@ -67,6 +68,7 @@ window.loadCustomers = async function() {
             </tr>
             `;
         }).join('');
+        lucide.createIcons();
     } catch (e) {
         console.error(e);
     }
@@ -81,7 +83,7 @@ window.loadInvoices = async function() {
         if (!tbody) return;
 
         if (!data.success || data.data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">Belum ada tagihan</div></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada tagihan</div></div></td></tr>`;
             return;
         }
 
@@ -104,6 +106,7 @@ window.loadInvoices = async function() {
             </tr>
             `;
         }).join('');
+        lucide.createIcons();
     } catch (e) {
         console.error(e);
     }

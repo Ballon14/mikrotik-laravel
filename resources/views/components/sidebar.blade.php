@@ -1,7 +1,7 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <div class="sidebar-logo">
-            <div class="sidebar-logo-icon">📡</div>
+            <div class="sidebar-logo-icon"><i data-lucide="radio" style="width:22px;height:22px;stroke-width:2.5;"></i></div>
             <div class="sidebar-logo-text">
                 <h1>MikroTik</h1>
                 <span>Dashboard Monitor</span>
@@ -9,7 +9,6 @@
         </div>
     </div>
 
-    <!-- Connection Status -->
     <div class="connection-status disconnected" id="connectionStatus">
         <div class="status-dot"></div>
         <div class="status-info">
@@ -30,54 +29,53 @@
         ];
     @endphp
 
-    <!-- Navigation -->
     <nav class="sidebar-nav">
         <div class="nav-section-title">Monitoring</div>
-        
+
         <a href="/" class="nav-item {{ request()->is('/') ? 'active' : '' }}">
-            <span class="nav-item-icon">📊</span>
+            <i data-lucide="layout-dashboard" class="nav-item-icon"></i>
             <span>System Overview</span>
         </a>
-        
+
         <a href="/interfaces" class="nav-item {{ request()->is('interfaces') ? 'active' : '' }}" data-section="interfaces">
-            <span class="nav-item-icon">🔌</span>
+            <i data-lucide="ethernet-port" class="nav-item-icon"></i>
             <span>Interfaces</span>
             <span class="nav-item-badge">{{ $counts['interfaces'] }}</span>
         </a>
-        
+
         <a href="/dhcp" class="nav-item {{ request()->is('dhcp') ? 'active' : '' }}" data-section="dhcp">
-            <span class="nav-item-icon">📋</span>
+            <i data-lucide="list" class="nav-item-icon"></i>
             <span>DHCP Leases</span>
             <span class="nav-item-badge">{{ $counts['dhcp'] }}</span>
         </a>
-        
+
         <a href="/arp" class="nav-item {{ request()->is('arp') ? 'active' : '' }}" data-section="arp">
-            <span class="nav-item-icon">📡</span>
+            <i data-lucide="radio" class="nav-item-icon"></i>
             <span>ARP Table</span>
             <span class="nav-item-badge">{{ $counts['arp'] }}</span>
         </a>
 
         <div class="nav-section-title">Network</div>
-        
+
         <a href="/ip-addresses" class="nav-item {{ request()->is('ip-addresses') ? 'active' : '' }}" data-section="ip-addresses">
-            <span class="nav-item-icon">🌐</span>
+            <i data-lucide="globe" class="nav-item-icon"></i>
             <span>IP Addresses</span>
             <span class="nav-item-badge">{{ $counts['ip_addresses'] }}</span>
         </a>
-        
+
         <a href="/routes" class="nav-item {{ request()->is('routes') ? 'active' : '' }}" data-section="routes">
-            <span class="nav-item-icon">🗺️</span>
+            <i data-lucide="map" class="nav-item-icon"></i>
             <span>Routing Table</span>
             <span class="nav-item-badge">{{ $counts['routes'] }}</span>
         </a>
-        
+
         <a href="/firewall" class="nav-item {{ request()->is('firewall') ? 'active' : '' }}" data-section="firewall">
-            <span class="nav-item-icon">🛡️</span>
+            <i data-lucide="shield" class="nav-item-icon"></i>
             <span>Firewall Rules</span>
         </a>
-        
+
         <a href="/ip-isolation" class="nav-item {{ request()->is('ip-isolation') ? 'active' : '' }}" data-section="ip-isolation">
-            <span class="nav-item-icon">🔒</span>
+            <i data-lucide="lock" class="nav-item-icon"></i>
             <span>IP Isolation</span>
             @if($counts['isolated'] !== '0')
                 <span class="nav-item-badge badge-danger">{{ $counts['isolated'] }}</span>
@@ -85,48 +83,49 @@
         </a>
 
         <div class="nav-section-title">Services</div>
-        
+
         <a href="/hotspot" class="nav-item {{ request()->is('hotspot') ? 'active' : '' }}" data-section="hotspot">
-            <span class="nav-item-icon">📶</span>
+            <i data-lucide="wifi" class="nav-item-icon"></i>
             <span>Hotspot Active</span>
             <span class="nav-item-badge">{{ $counts['hotspot'] }}</span>
         </a>
-        
+
         <a href="/logs" class="nav-item {{ request()->is('logs') ? 'active' : '' }}" data-section="logs">
-            <span class="nav-item-icon">📜</span>
+            <i data-lucide="file-text" class="nav-item-icon"></i>
             <span>System Logs</span>
         </a>
+
         <div class="nav-section-title">Billing System</div>
-        
+
         <a href="/packages" class="nav-item {{ request()->is('packages') ? 'active' : '' }}" data-section="packages">
-            <span class="nav-item-icon">💳</span>
+            <i data-lucide="credit-card" class="nav-item-icon"></i>
             <span>Packages</span>
         </a>
 
         <a href="/customers" class="nav-item {{ request()->is('customers') ? 'active' : '' }}" data-section="customers">
-            <span class="nav-item-icon">👥</span>
+            <i data-lucide="users" class="nav-item-icon"></i>
             <span>Customers</span>
         </a>
 
         <a href="/invoices" class="nav-item {{ request()->is('invoices') ? 'active' : '' }}" data-section="invoices">
-            <span class="nav-item-icon">🧾</span>
+            <i data-lucide="receipt" class="nav-item-icon"></i>
             <span>Invoices</span>
         </a>
     </nav>
 
-    <div class="sidebar-footer" style="flex-direction: column; align-items: flex-start; gap: 10px;">
-        <div style="display: flex; justify-content: space-between; width: 100%;">
+    <div class="sidebar-footer">
+        <div class="sidebar-footer-row">
             <div class="refresh-indicator">
                 <div class="refresh-spinner" id="refreshSpinner"></div>
                 <span>Auto-refresh</span>
             </div>
             <span>v1.2</span>
         </div>
-        
-        <form action="{{ route('logout') }}" method="POST" style="width: 100%;">
+
+        <form action="{{ route('logout') }}" method="POST">
             @csrf
-            <button type="submit" class="nav-item" style="width: 100%; border: none; background: rgba(248, 113, 113, 0.1); color: var(--accent-red); margin-top: 5px; cursor: pointer;">
-                <span class="nav-item-icon">🚪</span>
+            <button type="submit" class="sidebar-logout-btn">
+                <i data-lucide="log-out" style="width:16px;height:16px;"></i>
                 <span>Logout</span>
             </button>
         </form>

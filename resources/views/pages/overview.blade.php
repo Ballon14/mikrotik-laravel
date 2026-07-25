@@ -1,14 +1,13 @@
 @extends('layouts.app')
 
-@section('title', '📊 System Overview')
+@section('title', 'System Overview')
 
 @section('content')
-<!-- Stats Grid -->
 <div class="stats-grid">
     <div class="stat-card cyan">
         <div class="stat-card-top">
             <span class="stat-label">CPU Load</span>
-            <div class="stat-icon">⚡</div>
+            <i data-lucide="cpu" class="stat-icon-lucide"></i>
         </div>
         <div class="stat-value" id="cpuValue">-</div>
         <div class="progress-bar">
@@ -19,7 +18,7 @@
     <div class="stat-card green">
         <div class="stat-card-top">
             <span class="stat-label">RAM Usage</span>
-            <div class="stat-icon">🧠</div>
+            <i data-lucide="memory-stick" class="stat-icon-lucide"></i>
         </div>
         <div class="stat-value" id="ramValue">-</div>
         <div class="stat-sub" id="ramSub">- / -</div>
@@ -31,7 +30,7 @@
     <div class="stat-card purple">
         <div class="stat-card-top">
             <span class="stat-label">Storage</span>
-            <div class="stat-icon">💾</div>
+            <i data-lucide="hard-drive" class="stat-icon-lucide"></i>
         </div>
         <div class="stat-value" id="hddValue">-</div>
         <div class="stat-sub" id="hddSub">- / -</div>
@@ -40,16 +39,15 @@
     <div class="stat-card blue">
         <div class="stat-card-top">
             <span class="stat-label">Uptime</span>
-            <div class="stat-icon">⏱️</div>
+            <i data-lucide="clock" class="stat-icon-lucide"></i>
         </div>
-        <div class="stat-value" id="uptimeValue" style="font-size:18px;">-</div>
+        <div class="stat-value stat-value-small" id="uptimeValue">-</div>
     </div>
 </div>
 
-<!-- System Information -->
 <div class="card">
     <div class="card-header">
-        <h3><span class="icon">ℹ️</span> System Information</h3>
+        <h3><i data-lucide="info" style="width:16px;height:16px;"></i> System Information</h3>
     </div>
     <div class="card-body">
         <div class="info-grid">
@@ -81,18 +79,17 @@
     </div>
 </div>
 
-<!-- Traffic Charts -->
 <div class="charts-grid">
     <div class="chart-card" id="chartCardUplink">
         <div class="chart-header">
-            <h3>🌐 ether1-UPLINK-ISP</h3>
+            <h3><i data-lucide="globe" style="width:16px;height:16px;"></i> <span id="chartNameUplink">ether1-UPLINK-ISP</span></h3>
             <span class="chart-status" id="chartStatusUplink">Collecting...</span>
         </div>
         <div class="chart-body">
             <div class="chart-canvas-wrap" id="chartWrapUplink">
                 <div class="chart-waiting">
-                    <div class="dot-pulse"><span></span><span></span><span></span></div>
-                    Mengumpulkan data traffic...
+                    <i data-lucide="loader-2" class="icon-spin"></i>
+                    <span>Mengumpulkan data traffic...</span>
                 </div>
             </div>
         </div>
@@ -112,14 +109,14 @@
 
     <div class="chart-card" id="chartCardBridge">
         <div class="chart-header">
-            <h3>🌉 bridge1-DISTRIBUSI-SERVER</h3>
+            <h3><i data-lucide="network" style="width:16px;height:16px;"></i> <span id="chartNameBridge">bridge1-DISTRIBUSI-SERVER</span></h3>
             <span class="chart-status" id="chartStatusBridge">Collecting...</span>
         </div>
         <div class="chart-body">
             <div class="chart-canvas-wrap" id="chartWrapBridge">
                 <div class="chart-waiting">
-                    <div class="dot-pulse"><span></span><span></span><span></span></div>
-                    Mengumpulkan data traffic...
+                    <i data-lucide="loader-2" class="icon-spin"></i>
+                    <span>Mengumpulkan data traffic...</span>
                 </div>
             </div>
         </div>

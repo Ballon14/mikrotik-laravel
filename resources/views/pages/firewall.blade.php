@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', '🛡️ Firewall <span>Rules</span>')
+@section('title', 'Firewall Rules')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3><span class="icon">🛡️</span> Firewall Rules</h3>
+        <h3><i data-lucide="shield" style="width:16px;height:16px;"></i> Firewall Rules</h3>
     </div>
     <div class="card-body">
         <div class="tabs">
@@ -13,11 +13,10 @@
             <button class="tab-btn" data-tab="tabNat">NAT Rules</button>
         </div>
 
-        <!-- Filter -->
         <div class="tab-content active" id="tabFilter">
             <div class="tab-actions">
                 <button class="btn-action btn-add" id="btnAddFilter" title="Add Filter Rule">
-                    <span>＋</span> Add Filter
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> Add Filter
                 </button>
             </div>
             <div class="data-table-wrapper">
@@ -35,17 +34,16 @@
                         </tr>
                     </thead>
                     <tbody id="firewallFilterTable">
-                        <tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading...</div></div></td></tr>
+                        <tr><td colspan="8"><div class="empty-state"><i data-lucide="loader-2" class="icon-spin"></i><div class="empty-state-text">Loading...</div></div></td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- NAT -->
         <div class="tab-content" id="tabNat">
             <div class="tab-actions">
                 <button class="btn-action btn-add" id="btnAddNat" title="Add NAT Rule">
-                    <span>＋</span> Add NAT
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> Add NAT
                 </button>
             </div>
             <div class="data-table-wrapper">
@@ -63,7 +61,7 @@
                         </tr>
                     </thead>
                     <tbody id="firewallNatTable">
-                        <tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading...</div></div></td></tr>
+                        <tr><td colspan="8"><div class="empty-state"><i data-lucide="loader-2" class="icon-spin"></i><div class="empty-state-text">Loading...</div></div></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -71,12 +69,11 @@
     </div>
 </div>
 
-<!-- Add/Edit Firewall Filter Modal -->
 <div class="crud-modal" id="filterModal">
     <div class="crud-modal-content crud-modal-wide">
         <div class="crud-modal-header">
             <h3 id="filterModalTitle">Add Filter Rule</h3>
-            <button class="crud-modal-close" id="filterModalClose">✕</button>
+            <button class="crud-modal-close" id="filterModalClose"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
         </div>
         <form id="filterForm" class="crud-form">
             <input type="hidden" id="filterEditId" value="">
@@ -115,24 +112,24 @@
                 <div class="form-group">
                     <label for="filterProtocol">Protocol</label>
                     <select id="filterProtocol" name="protocol">
-                        <option value="">any</option>
-                        <option value="tcp">tcp</option>
-                        <option value="udp">udp</option>
-                        <option value="icmp">icmp</option>
+                        <option value="">Any</option>
+                        <option value="tcp">TCP</option>
+                        <option value="udp">UDP</option>
+                        <option value="icmp">ICMP</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="filterDstPort">Dst Port</label>
-                    <input type="text" id="filterDstPort" name="dst-port" placeholder="80,443">
+                    <input type="text" id="filterDstPort" name="dst-port" placeholder="e.g. 80,443">
                 </div>
             </div>
             <div class="form-group">
                 <label for="filterComment">Comment</label>
-                <input type="text" id="filterComment" name="comment" placeholder="Optional comment">
+                <input type="text" id="filterComment" name="comment" placeholder="Rule description">
             </div>
             <div class="form-group checkbox-group">
                 <label>
-                    <input type="checkbox" id="filterDisabled" name="disabled">
+                    <input type="checkbox" id="filterDisabled" name="disabled" value="yes">
                     <span>Disabled</span>
                 </label>
             </div>
@@ -144,12 +141,11 @@
     </div>
 </div>
 
-<!-- Add/Edit Firewall NAT Modal -->
 <div class="crud-modal" id="natModal">
     <div class="crud-modal-content crud-modal-wide">
         <div class="crud-modal-header">
             <h3 id="natModalTitle">Add NAT Rule</h3>
-            <button class="crud-modal-close" id="natModalClose">✕</button>
+            <button class="crud-modal-close" id="natModalClose"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
         </div>
         <form id="natForm" class="crud-form">
             <input type="hidden" id="natEditId" value="">
@@ -168,8 +164,6 @@
                         <option value="src-nat">src-nat</option>
                         <option value="dst-nat">dst-nat</option>
                         <option value="redirect">redirect</option>
-                        <option value="accept">accept</option>
-                        <option value="drop">drop</option>
                     </select>
                 </div>
             </div>
@@ -187,15 +181,14 @@
                 <div class="form-group">
                     <label for="natProtocol">Protocol</label>
                     <select id="natProtocol" name="protocol">
-                        <option value="">any</option>
-                        <option value="tcp">tcp</option>
-                        <option value="udp">udp</option>
-                        <option value="icmp">icmp</option>
+                        <option value="">Any</option>
+                        <option value="tcp">TCP</option>
+                        <option value="udp">UDP</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="natDstPort">Dst Port</label>
-                    <input type="text" id="natDstPort" name="dst-port" placeholder="80,443">
+                    <input type="text" id="natDstPort" name="dst-port" placeholder="e.g. 80,443">
                 </div>
             </div>
             <div class="form-row">
@@ -205,16 +198,16 @@
                 </div>
                 <div class="form-group">
                     <label for="natToPorts">To Ports</label>
-                    <input type="text" id="natToPorts" name="to-ports" placeholder="8080">
+                    <input type="text" id="natToPorts" name="to-ports" placeholder="e.g. 80">
                 </div>
             </div>
             <div class="form-group">
                 <label for="natComment">Comment</label>
-                <input type="text" id="natComment" name="comment" placeholder="Optional comment">
+                <input type="text" id="natComment" name="comment" placeholder="Rule description">
             </div>
             <div class="form-group checkbox-group">
                 <label>
-                    <input type="checkbox" id="natDisabled" name="disabled">
+                    <input type="checkbox" id="natDisabled" name="disabled" value="yes">
                     <span>Disabled</span>
                 </label>
             </div>
@@ -226,10 +219,9 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
 <div class="confirm-modal" id="confirmModal">
     <div class="confirm-modal-content">
-        <div class="confirm-icon">⚠️</div>
+        <i data-lucide="alert-triangle" style="width:40px;height:40px;color:#fbbf24;margin-bottom:12px;"></i>
         <h3>Konfirmasi Hapus</h3>
         <p id="confirmMessage">Apakah Anda yakin ingin menghapus item ini?</p>
         <div class="confirm-actions">

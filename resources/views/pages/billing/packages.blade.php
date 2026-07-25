@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', '💳 Billing <span>Packages</span>')
+@section('title', 'Billing Packages')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3><span class="icon">💳</span> Data Paket Internet</h3>
+        <h3><i data-lucide="credit-card" style="width:16px;height:16px;"></i> Data Paket Internet</h3>
         <button class="btn-action btn-add" id="btnAddPackage" title="Tambah Paket">
-            <span>＋</span> Tambah Paket
+            <i data-lucide="plus" style="width:14px;height:14px;"></i> Tambah Paket
         </button>
     </div>
     <div class="card-body">
@@ -24,19 +24,18 @@
                     </tr>
                 </thead>
                 <tbody id="packagesTable">
-                    <tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading...</div></div></td></tr>
+                    <tr><td colspan="6"><div class="empty-state"><i data-lucide="loader-2" class="icon-spin"></i><div class="empty-state-text">Loading...</div></div></td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Add/Edit Package Modal -->
 <div class="crud-modal" id="packageModal">
     <div class="crud-modal-content">
         <div class="crud-modal-header">
             <h3 id="packageModalTitle">Tambah Paket</h3>
-            <button class="crud-modal-close" id="packageModalClose">✕</button>
+            <button class="crud-modal-close" id="packageModalClose"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
         </div>
         <form id="packageForm" class="crud-form">
             <input type="hidden" id="packageEditId" value="">
@@ -64,10 +63,9 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
 <div class="confirm-modal" id="confirmModal">
     <div class="confirm-modal-content">
-        <div class="confirm-icon">⚠️</div>
+        <i data-lucide="alert-triangle" style="width:40px;height:40px;color:#fbbf24;margin-bottom:12px;"></i>
         <h3>Konfirmasi Hapus</h3>
         <p id="confirmMessage">Apakah Anda yakin ingin menghapus item ini?</p>
         <div class="confirm-actions">

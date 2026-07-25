@@ -6,7 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login - MikroTik Billing & Dashboard</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2322d3ee' stroke-width='2'><path d='m12 14 4-4'/><path d='M4 20v-8a8 8 0 0 1 16 0v8'/><path d='M4 20h16'/><path d='M4 14h16'/></svg>">
     <style>
         body {
             display: flex;
@@ -86,5 +87,6 @@
 </head>
 <body>
     @yield('content')
+    <script>lucide.createIcons();</script>
 </body>
 </html>

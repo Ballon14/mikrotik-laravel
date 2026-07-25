@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', '🔌 Network Interfaces')
+@section('title', 'Network Interfaces')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3><span class="icon">🔌</span> Network Interfaces</h3>
+        <h3><i data-lucide="ethernet-port" style="width:16px;height:16px;"></i> Network Interfaces</h3>
     </div>
     <div class="card-body">
         <div class="data-table-wrapper">
@@ -22,19 +22,18 @@
                     </tr>
                 </thead>
                 <tbody id="interfacesTable">
-                    <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading...</div></div></td></tr>
+                    <tr><td colspan="7"><div class="empty-state"><i data-lucide="loader-2" class="icon-spin"></i><div class="empty-state-text">Loading...</div></div></td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Interface Detail Modal -->
 <div class="modal-overlay" id="ifaceModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>🔌 <span id="modalIfaceName">Interface</span></h3>
-            <button class="modal-close" id="modalClose">✕</button>
+            <h3><i data-lucide="ethernet-port" style="width:16px;height:16px;"></i> <span id="modalIfaceName">Interface</span></h3>
+            <button class="modal-close" id="modalClose"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
         </div>
         <div class="modal-body" id="modalIfaceBody">
             Loading...

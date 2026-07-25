@@ -4,25 +4,25 @@
 <div class="login-container">
     <div class="login-card">
         <div class="login-logo">
-            <div class="login-logo-icon">📡</div>
+            <i data-lucide="radio" style="width:32px;height:32px;color:#22d3ee;"></i>
             <h1>MikroTik</h1>
             <span>Dashboard & Billing</span>
         </div>
-        
+
         <div class="login-error" id="loginError"></div>
 
-        <form id="loginForm" class="crud-form" style="padding: 0;">
+        <form id="loginForm" class="crud-form login-form-clean">
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" placeholder="admin@billing.com" required autofocus>
             </div>
-            
+
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="••••••••" required>
+                <input type="password" id="password" name="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required>
             </div>
 
-            <div class="form-group checkbox-group" style="margin-bottom: 24px;">
+            <div class="form-group checkbox-group">
                 <label>
                     <input type="checkbox" id="remember" name="remember">
                     <span>Ingat Saya</span>
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
+
         btn.disabled = true;
         btn.textContent = 'Memverifikasi...';
         errorDiv.style.display = 'none';

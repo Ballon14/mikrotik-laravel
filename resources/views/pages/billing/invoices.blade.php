@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', '🧾 Billing <span>Invoices</span>')
+@section('title', 'Billing Invoices')
 
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3><span class="icon">🧾</span> Data Tagihan (Invoices)</h3>
+        <h3><i data-lucide="receipt" style="width:16px;height:16px;"></i> Data Tagihan (Invoices)</h3>
         <button class="btn-action btn-add" id="btnAddInvoice" title="Buat Tagihan">
-            <span>＋</span> Buat Tagihan
+            <i data-lucide="plus" style="width:14px;height:14px;"></i> Buat Tagihan
         </button>
     </div>
     <div class="card-body">
@@ -24,19 +24,18 @@
                     </tr>
                 </thead>
                 <tbody id="invoicesTable">
-                    <tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading...</div></div></td></tr>
+                    <tr><td colspan="6"><div class="empty-state"><i data-lucide="loader-2" class="icon-spin"></i><div class="empty-state-text">Loading...</div></div></td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Add/Edit Invoice Modal -->
 <div class="crud-modal" id="invoiceModal">
     <div class="crud-modal-content">
         <div class="crud-modal-header">
             <h3 id="invoiceModalTitle">Buat Tagihan</h3>
-            <button class="crud-modal-close" id="invoiceModalClose">✕</button>
+            <button class="crud-modal-close" id="invoiceModalClose"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
         </div>
         <form id="invoiceForm" class="crud-form">
             <input type="hidden" id="invoiceEditId" value="">
@@ -57,7 +56,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="invDueDate">Jatuh Tempo</label>
-                    <input type="date" id="invDueDate" name="due_date" required style="color:var(--text-primary); background:var(--bg-input); border:1px solid var(--border-color); padding:10px 14px; border-radius:8px; width:100%; box-sizing:border-box;">
+                    <input type="date" id="invDueDate" name="due_date" required>
                 </div>
                 <div class="form-group">
                     <label for="invStatus">Status</label>
@@ -75,10 +74,9 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
 <div class="confirm-modal" id="confirmModal">
     <div class="confirm-modal-content">
-        <div class="confirm-icon">⚠️</div>
+        <i data-lucide="alert-triangle" style="width:40px;height:40px;color:#fbbf24;margin-bottom:12px;"></i>
         <h3>Konfirmasi Hapus</h3>
         <p id="confirmMessage">Apakah Anda yakin ingin menghapus item ini?</p>
         <div class="confirm-actions">
