@@ -19,12 +19,13 @@
                         <th>Nama Paket</th>
                         <th>Harga (Rp)</th>
                         <th>Speed</th>
+                        <th>Periode</th>
                         <th>Deskripsi</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="packagesTable">
-                    <tr><td colspan="6"><div class="empty-state"><i data-lucide="loader-2" class="icon-spin"></i><div class="empty-state-text">Loading...</div></div></td></tr>
+                    <tr><td colspan="7"><div class="empty-state"><i data-lucide="loader-2" class="icon-spin"></i><div class="empty-state-text">Loading...</div></div></td></tr>
                 </tbody>
             </table>
         </div>
@@ -54,6 +55,16 @@
             <div class="form-group">
                 <label for="pkgDesc">Deskripsi</label>
                 <input type="text" id="pkgDesc" name="description" placeholder="Deskripsi paket">
+            </div>
+            <div class="form-group">
+                <label for="pkgPeriod">Periode Tagihan</label>
+                <select id="pkgPeriod" name="billing_period">
+                    <option value="">— Pilih Periode —</option>
+                    <option value="weekly">Mingguan</option>
+                    <option value="monthly">Bulanan</option>
+                    <option value="quarterly">Triwulan</option>
+                    <option value="yearly">Tahunan</option>
+                </select>
             </div>
             <div class="form-actions">
                 <button type="button" class="btn-cancel" id="packageFormCancel">Batal</button>

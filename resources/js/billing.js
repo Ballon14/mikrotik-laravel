@@ -46,20 +46,22 @@ window.loadPackages = async function(page) {
         if (!tbody) return;
 
         if (!data.success || data.data.data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada paket</div></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="inbox" style="width:24px;height:24px;opacity:0.5;"></i><div class="empty-state-text">Belum ada paket</div></div></td></tr>`;
             document.getElementById("packagesPagination").innerHTML = "";
             return;
         }
 
+        const periodLabels = {weekly:'Mingguan',monthly:'Bulanan',quarterly:'Triwulan',yearly:'Tahunan'};
         tbody.innerHTML = data.data.data.map(p => `
             <tr>
                 <td>${p.id}</td>
                 <td><strong>${esc(p.name)}</strong></td>
                 <td>Rp ${Number(p.price).toLocaleString('id-ID')}</td>
                 <td>${esc(p.speed || '-')}</td>
+                <td>${periodLabels[p.billing_period] || esc(p.billing_period || '-')}</td>
                 <td>${esc(p.description || '-')}</td>
                 <td>
-                    <button class="btn-edit" onclick="editPackage(${p.id},'${esc(p.name)}','${esc(p.price)}','${esc(p.speed || '')}','${esc(p.description || '')}')">Edit</button>
+                    <button class="btn-edit" onclick="editPackage(${p.id},'${esc(p.name)}','${esc(p.price)}','${esc(p.speed || '')}','${esc(p.description || '')}','${esc(p.billing_period || '')}')">Edit</button>
                     <button class="btn-delete" onclick="deletePackage(${p.id})">Hapus</button>
                 </td>
             </tr>
@@ -176,7 +178,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: document.getElementById('pkgName').value,
                 price: document.getElementById('pkgPrice').value,
                 speed: document.getElementById('pkgSpeed').value,
-                description: document.getElementById('pkgDesc').value
+                description: document.getElementById('pkgDesc').value,
+                billing_period: document.getElementById('pkgPeriod').value
             };
 
             const action = id ? 'mengupdate' : 'menambahkan';
@@ -266,12 +269,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Edit functions
-window.editPackage = function(id, name, price, speed, desc) {
+window.editPackage = function(id, name, price, speed, desc, period) {
     document.getElementById('packageEditId').value = id;
     document.getElementById('pkgName').value = name;
     document.getElementById('pkgPrice').value = price;
     document.getElementById('pkgSpeed').value = speed;
     document.getElementById('pkgDesc').value = desc;
+    document.getElementById('pkgPeriod').value = period || '';
     document.getElementById('packageModalTitle').textContent = 'Edit Paket';
     document.getElementById('packageModal').classList.add('active');
 };
