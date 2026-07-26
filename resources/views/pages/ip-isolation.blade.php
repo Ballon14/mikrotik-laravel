@@ -69,13 +69,4 @@
         </div>
     </div>
 </div>
-<div class="confirm-modal" id="confirmModal">
-    <div class="confirm-modal-content">
-        <p id="confirmMessage">Apakah Anda yakin ingin menghapus item ini?</p>
-        <div class="confirm-modal-actions">
-            <button class="btn-cancel" id="confirmCancel">Batal</button>
-            <button class="btn-delete" id="confirmDelete">Hapus</button>
-        </div>
-    </div>
-</div>
 @endsection

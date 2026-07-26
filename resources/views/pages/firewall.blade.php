@@ -220,15 +220,4 @@
     </div>
 </div>
 
-<div class="confirm-modal" id="confirmModal">
-    <div class="confirm-modal-content">
-        <i data-lucide="alert-triangle" style="width:40px;height:40px;color:#fbbf24;margin-bottom:12px;"></i>
-        <h3>Konfirmasi Hapus</h3>
-        <p id="confirmMessage">Apakah Anda yakin ingin menghapus item ini?</p>
-        <div class="confirm-actions">
-            <button class="btn-cancel" id="confirmCancel">Batal</button>
-            <button class="btn-delete" id="confirmDelete">Hapus</button>
-        </div>
-    </div>
-</div>
 @endsection
