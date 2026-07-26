@@ -161,6 +161,7 @@ class BillingController extends Controller
             'entity_type' => 'customer',
             'entity_id' => $customer->id,
             'description' => "Pelanggan {$customer->name} dibuat",
+            'new_values' => $customer->toArray(),
             'user_id' => Auth::id(),
         ]);
 
@@ -190,11 +191,14 @@ class BillingController extends Controller
             ActivateCustomer::dispatch($customer);
         }
 
+        $changed = $customer->getChanges();
         AuditLog::create([
             'action' => 'customer_updated',
             'entity_type' => 'customer',
             'entity_id' => $customer->id,
             'description' => "Pelanggan {$customer->name} diupdate",
+            'old_values' => array_intersect_key($customer->getOriginal(), $changed),
+            'new_values' => $changed,
             'user_id' => Auth::id(),
         ]);
 
@@ -400,6 +404,7 @@ class BillingController extends Controller
             'entity_type' => 'payment',
             'entity_id' => $payment->id,
             'description' => "Pembayaran Rp {$validated['amount']} untuk invoice {$invoice->invoice_number}",
+            'new_values' => $payment->toArray(),
             'user_id' => Auth::id(),
         ]);
 

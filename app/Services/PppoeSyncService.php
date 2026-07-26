@@ -60,6 +60,7 @@ class PppoeSyncService
                 'entity_type' => 'pppoe_account',
                 'entity_id' => $account->id,
                 'description' => "PPPoE {$account->username} telah disinkronkan ke router {$router->name}",
+                'new_values' => $account->toArray(),
             ]);
 
             return true;
@@ -115,6 +116,7 @@ class PppoeSyncService
                 'entity_type' => 'pppoe_account',
                 'entity_id' => $account->id,
                 'description' => "PPPoE {$account->username} dinonaktifkan di router",
+                'new_values' => ['disabled' => true],
             ]);
 
             return true;
@@ -163,6 +165,7 @@ class PppoeSyncService
                 'entity_type' => 'pppoe_account',
                 'entity_id' => $account->id,
                 'description' => "PPPoE {$account->username} diaktifkan kembali di router",
+                'new_values' => ['disabled' => false],
             ]);
 
             return true;
@@ -207,6 +210,7 @@ class PppoeSyncService
                 'entity_type' => 'pppoe_account',
                 'entity_id' => $account->id,
                 'description' => "PPPoE {$account->username} dihapus dari router",
+                'old_values' => $account->toArray(),
             ]);
 
             return true;
