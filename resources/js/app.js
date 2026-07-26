@@ -564,20 +564,20 @@ function updateLastUpdated() {
 
 async function loadQuickStats() {
     try {
-        const [ifaces, dhcp, arp, routes, fw] = await Promise.all([
-            apiFetch("/api/interfaces").catch(() => ({ data: [] })),
-            apiFetch("/api/dhcp").catch(() => ({ data: [] })),
-            apiFetch("/api/arp").catch(() => ({ data: [] })),
-            apiFetch("/api/routes").catch(() => ({ data: [] })),
-            apiFetch("/api/firewall").catch(() => ({ data: { filter: [], nat: [] } })),
+        const [ifaces, dhcp, arp, routes, fwFilter, fwNat] = await Promise.all([
+            apiFetch("/api/interfaces").catch(() => []),
+            apiFetch("/api/dhcp-leases").catch(() => []),
+            apiFetch("/api/arp").catch(() => []),
+            apiFetch("/api/routes").catch(() => []),
+            apiFetch("/api/firewall/filter").catch(() => []),
+            apiFetch("/api/firewall/nat").catch(() => []),
         ]);
 
-        document.getElementById("qsInterfaces").textContent = (ifaces?.data?.length || 0);
-        document.getElementById("qsDhcp").textContent = (dhcp?.data?.length || 0);
-        document.getElementById("qsArp").textContent = (arp?.data?.length || 0);
-        document.getElementById("qsRoutes").textContent = (routes?.data?.length || 0);
-        const fwCount = (fw?.data?.filter?.length || 0) + (fw?.data?.nat?.length || 0);
-        document.getElementById("qsFirewall").textContent = fwCount;
+        document.getElementById("qsInterfaces").textContent = (ifaces?.length || 0);
+        document.getElementById("qsDhcp").textContent = (dhcp?.length || 0);
+        document.getElementById("qsArp").textContent = (arp?.length || 0);
+        document.getElementById("qsRoutes").textContent = (routes?.length || 0);
+        document.getElementById("qsFirewall").textContent = (fwFilter?.length || 0) + (fwNat?.length || 0);
 
         const qs = document.getElementById("quickStats");
         if (qs) qs.style.display = "flex";

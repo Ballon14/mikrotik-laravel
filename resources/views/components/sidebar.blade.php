@@ -23,7 +23,7 @@
             'dhcp' => count(Cache::get('mikrotik_data_dhcp', [])) ?: '-',
             'arp' => count(Cache::get('mikrotik_data_arp', [])) ?: '-',
             'routes' => count(Cache::get('mikrotik_data_routes', [])) ?: '-',
-            'hotspot' => count(Cache::get('mikrotik_data_wireless', [])) ?: '-',
+            'hotspot' => count(Cache::get('mikrotik_data_hotspot_active', [])) ?: '-',
             'ip_addresses' => count(Cache::get('mikrotik_data_ip_addresses', [])) ?: '-',
             'isolated' => count(Cache::get('mikrotik_data_isolated_ips', [])) ?: '0',
         ];

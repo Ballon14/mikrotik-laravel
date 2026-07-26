@@ -19,6 +19,7 @@ use App\Models\Router;
 use App\Services\PppoeSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class BillingController extends Controller
 {
@@ -39,9 +40,14 @@ class BillingController extends Controller
             ->take(10)
             ->get();
 
+        $monthExpr = DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%m', paid_at) as month"
+            : 'MONTH(paid_at) as month';
+
         $monthlyData = Invoice::where('status', 'paid')
             ->whereYear('paid_at', now()->year)
-            ->selectRaw('MONTH(paid_at) as month, SUM(amount) as total')
+            ->selectRaw("SUM(amount) as total")
+            ->selectRaw($monthExpr)
             ->groupBy('month')
             ->orderBy('month')
             ->pluck('total', 'month');

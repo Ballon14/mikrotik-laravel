@@ -76,10 +76,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/audit-logs', function () {
         return view('pages.billing.audit-logs');
     });
-    Route::get('/billing-dashboard', function () {
-        return view('pages.billing.dashboard');
-    });
-
     // API Routes
     Route::prefix('api')->group(function () {
         Route::get('/router', [MikrotikController::class, 'router']);

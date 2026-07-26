@@ -174,13 +174,6 @@ class MikrotikController extends Controller
         return $this->response($data);
     }
 
-    public function hotspot()
-    {
-        $data = Cache::get('mikrotik_data_hotspot_active', []);
-
-        return $this->response($data);
-    }
-
     // ─── IP Addresses (Read from Cache) ───
 
     public function ipAddresses()
