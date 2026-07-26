@@ -166,10 +166,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('packageForm').reset();
             document.getElementById('packageEditId').value = '';
             document.getElementById('packageModalTitle').textContent = 'Tambah Paket';
-            modalPackage.classList.add('active');
+            modalPackage.classList.add('show');
         });
-        document.getElementById('packageModalClose').addEventListener('click', () => modalPackage.classList.remove('active'));
-        document.getElementById('packageFormCancel').addEventListener('click', () => modalPackage.classList.remove('active'));
+        document.getElementById('packageModalClose').addEventListener('click', () => modalPackage.classList.remove('show'));
+        document.getElementById('packageFormCancel').addEventListener('click', () => modalPackage.classList.remove('show'));
 
         document.getElementById('packageForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!confirmed) return;
 
             await saveCrud(id ? `/api/packages/${id}` : '/api/packages', id ? 'PUT' : 'POST', data, () => {
-                modalPackage.classList.remove('active');
+                modalPackage.classList.remove('show');
                 window.loadPackages();
             }, e.currentTarget.querySelector('button[type="submit"]'));
         });
@@ -202,10 +202,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('customerEditId').value = '';
             document.getElementById('customerModalTitle').textContent = 'Tambah Pelanggan';
             await loadPackageOptions();
-            modalCustomer.classList.add('active');
+            modalCustomer.classList.add('show');
         });
-        document.getElementById('customerModalClose').addEventListener('click', () => modalCustomer.classList.remove('active'));
-        document.getElementById('customerFormCancel').addEventListener('click', () => modalCustomer.classList.remove('active'));
+        document.getElementById('customerModalClose').addEventListener('click', () => modalCustomer.classList.remove('show'));
+        document.getElementById('customerFormCancel').addEventListener('click', () => modalCustomer.classList.remove('show'));
 
         document.getElementById('customerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!confirmed) return;
 
             await saveCrud(id ? `/api/customers/${id}` : '/api/customers', id ? 'PUT' : 'POST', data, () => {
-                modalCustomer.classList.remove('active');
+                modalCustomer.classList.remove('show');
                 window.loadCustomers();
             }, e.currentTarget.querySelector('button[type="submit"]'));
         });
@@ -240,10 +240,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('invoiceEditId').value = '';
             document.getElementById('invoiceModalTitle').textContent = 'Buat Tagihan';
             await loadCustomerOptions();
-            modalInvoice.classList.add('active');
+            modalInvoice.classList.add('show');
         });
-        document.getElementById('invoiceModalClose').addEventListener('click', () => modalInvoice.classList.remove('active'));
-        document.getElementById('invoiceFormCancel').addEventListener('click', () => modalInvoice.classList.remove('active'));
+        document.getElementById('invoiceModalClose').addEventListener('click', () => modalInvoice.classList.remove('show'));
+        document.getElementById('invoiceFormCancel').addEventListener('click', () => modalInvoice.classList.remove('show'));
 
         document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!confirmed) return;
 
             await saveCrud(id ? `/api/invoices/${id}` : '/api/invoices', id ? 'PUT' : 'POST', data, () => {
-                modalInvoice.classList.remove('active');
+                modalInvoice.classList.remove('show');
                 window.loadInvoices();
             }, e.currentTarget.querySelector('button[type="submit"]'));
         });
@@ -279,7 +279,7 @@ window.editPackage = function(id, name, price, speed, desc, period) {
     document.getElementById('pkgDesc').value = desc;
     document.getElementById('pkgPeriod').value = period || '';
     document.getElementById('packageModalTitle').textContent = 'Edit Paket';
-    document.getElementById('packageModal').classList.add('active');
+    document.getElementById('packageModal').classList.add('show');
 };
 
 window.editCustomer = async function(id) {
@@ -298,7 +298,7 @@ window.editCustomer = async function(id) {
         document.getElementById('custStatus').value = c.status;
         
         document.getElementById('customerModalTitle').textContent = 'Edit Pelanggan';
-        document.getElementById('customerModal').classList.add('active');
+        document.getElementById('customerModal').classList.add('show');
     }
 };
 
@@ -318,7 +318,7 @@ window.editInvoice = async function(id) {
         document.getElementById('invPeriodEnd').value = i.period_end || '';
         
         document.getElementById('invoiceModalTitle').textContent = 'Edit Tagihan';
-        document.getElementById('invoiceModal').classList.add('active');
+        document.getElementById('invoiceModal').classList.add('show');
     }
 };
 
@@ -474,7 +474,7 @@ window.editRouter = async function(id) {
     document.getElementById('rtrPass').value = '';
     document.getElementById('rtrActive').checked = r.is_active;
     document.getElementById('routerModalTitle').textContent = 'Edit Router';
-    document.getElementById('routerModal').classList.add('active');
+    document.getElementById('routerModal').classList.add('show');
 };
 
 window.deleteRouter = function(id) { confirmDeleteAction('routers', id, window.loadRouters); };
@@ -541,7 +541,7 @@ window.editPppoe = async function(id) {
     document.getElementById('pppIp').value = a.ip_address || '';
     document.getElementById('pppDisabled').checked = a.disabled;
     document.getElementById('pppoeModalTitle').textContent = 'Edit Akun PPPoE';
-    document.getElementById('pppoeModal').classList.add('active');
+    document.getElementById('pppoeModal').classList.add('show');
 };
 
 window.syncPppoe = async function(id) {
@@ -575,10 +575,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btnAddPayment.addEventListener('click', async () => {
             document.getElementById('paymentForm').reset();
             await loadInvoiceOptions();
-            modalPayment.classList.add('active');
+            modalPayment.classList.add('show');
         });
-        document.getElementById('paymentModalClose').addEventListener('click', () => modalPayment.classList.remove('active'));
-        document.getElementById('paymentFormCancel').addEventListener('click', () => modalPayment.classList.remove('active'));
+        document.getElementById('paymentModalClose').addEventListener('click', () => modalPayment.classList.remove('show'));
+        document.getElementById('paymentFormCancel').addEventListener('click', () => modalPayment.classList.remove('show'));
 
         document.getElementById('paymentForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -592,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const confirmed = await window.showConfirm('Apakah Anda yakin ingin mencatat pembayaran ini?');
             if (!confirmed) return;
             await saveCrud('/api/payments', 'POST', data, () => {
-                modalPayment.classList.remove('active');
+                modalPayment.classList.remove('show');
                 window.loadPayments();
             }, e.currentTarget.querySelector('button[type="submit"]'));
         });
@@ -606,10 +606,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('routerForm').reset();
             document.getElementById('routerEditId').value = '';
             document.getElementById('routerModalTitle').textContent = 'Tambah Router';
-            modalRouter.classList.add('active');
+            modalRouter.classList.add('show');
         });
-        document.getElementById('routerModalClose').addEventListener('click', () => modalRouter.classList.remove('active'));
-        document.getElementById('routerFormCancel').addEventListener('click', () => modalRouter.classList.remove('active'));
+        document.getElementById('routerModalClose').addEventListener('click', () => modalRouter.classList.remove('show'));
+        document.getElementById('routerFormCancel').addEventListener('click', () => modalRouter.classList.remove('show'));
 
         document.getElementById('routerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -630,7 +630,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!confirmed) return;
 
             await saveCrud(id ? `/api/routers/${id}` : '/api/routers', id ? 'PUT' : 'POST', data, () => {
-                modalRouter.classList.remove('active');
+                modalRouter.classList.remove('show');
                 window.loadRouters();
             }, e.currentTarget.querySelector('button[type="submit"]'));
         });
@@ -646,10 +646,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('pppoeModalTitle').textContent = 'Tambah Akun PPPoE';
             await loadCustomerOptions();
             await loadRouterOptions();
-            modalPppoe.classList.add('active');
+            modalPppoe.classList.add('show');
         });
-        document.getElementById('pppoeModalClose').addEventListener('click', () => modalPppoe.classList.remove('active'));
-        document.getElementById('pppoeFormCancel').addEventListener('click', () => modalPppoe.classList.remove('active'));
+        document.getElementById('pppoeModalClose').addEventListener('click', () => modalPppoe.classList.remove('show'));
+        document.getElementById('pppoeFormCancel').addEventListener('click', () => modalPppoe.classList.remove('show'));
 
         document.getElementById('pppoeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -667,7 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const confirmed = await window.showConfirm(`Apakah Anda yakin ingin ${action} akun PPPoE ini?`);
             if (!confirmed) return;
             await saveCrud(id ? `/api/pppoe-accounts/${id}` : '/api/pppoe-accounts', id ? 'PUT' : 'POST', data, () => {
-                modalPppoe.classList.remove('active');
+                modalPppoe.classList.remove('show');
                 window.loadPppoeAccounts();
             }, e.currentTarget.querySelector('button[type="submit"]'));
         });
