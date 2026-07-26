@@ -18,6 +18,8 @@
     </div>
 
     @php
+        $fwFilter = Cache::get('mikrotik_data_fw_filter', []);
+        $fwNat = Cache::get('mikrotik_data_fw_nat', []);
         $counts = [
             'interfaces' => count(Cache::get('mikrotik_data_interfaces', [])) ?: '-',
             'dhcp' => count(Cache::get('mikrotik_data_dhcp', [])) ?: '-',
@@ -25,7 +27,8 @@
             'routes' => count(Cache::get('mikrotik_data_routes', [])) ?: '-',
             'hotspot' => count(Cache::get('mikrotik_data_hotspot_active', [])) ?: '-',
             'ip_addresses' => count(Cache::get('mikrotik_data_ip_addresses', [])) ?: '-',
-            'isolated' => count(Cache::get('mikrotik_data_isolated_ips', [])) ?: '0',
+            'firewall' => count($fwFilter) + count($fwNat) ?: '-',
+            'isolated' => count(Cache::get('mikrotik_data_isolated_ips', [])) ?: '-',
         ];
     @endphp
 
@@ -74,7 +77,7 @@
 
         <div class="nav-section-title">Monitoring</div>
 
-        <a href="/monitoring" class="nav-item {{ request()->is('monitoring') ? 'active' : '' }}">
+        <a href="/monitoring" class="nav-item {{ request()->is('monitoring') ? 'active' : '' }}" data-section="overview">
             <i data-lucide="layout-dashboard" class="nav-item-icon"></i>
             <span>System Overview</span>
         </a>
@@ -114,12 +117,13 @@
         <a href="/firewall" class="nav-item {{ request()->is('firewall') ? 'active' : '' }}" data-section="firewall">
             <i data-lucide="shield" class="nav-item-icon"></i>
             <span>Firewall Rules</span>
+            <span class="nav-item-badge">{{ $counts['firewall'] }}</span>
         </a>
 
         <a href="/ip-isolation" class="nav-item {{ request()->is('ip-isolation') ? 'active' : '' }}" data-section="ip-isolation">
             <i data-lucide="lock" class="nav-item-icon"></i>
             <span>IP Isolation</span>
-            @if($counts['isolated'] !== '0')
+            @if($counts['isolated'] !== '-')
                 <span class="nav-item-badge badge-danger">{{ $counts['isolated'] }}</span>
             @endif
         </a>

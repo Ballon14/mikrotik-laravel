@@ -75,7 +75,6 @@ class MikrotikMonitor extends Command
             '/ip/firewall/filter/print' => 'mikrotik_data_fw_filter',
             '/ip/firewall/nat/print' => 'mikrotik_data_fw_nat',
             '/ip/arp/print' => 'mikrotik_data_arp',
-            '/interface/wireless/registration-table/print' => 'mikrotik_data_wireless',
             '/ip/address/print' => 'mikrotik_data_ip_addresses',
             '/ip/dns/print' => 'mikrotik_data_dns',
         ];
