@@ -676,6 +676,47 @@ html {
     margin-top: 4px;
 }
 
+/* ─── Revenue Chart ─── */
+.revenue-chart {
+    height: 250px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 20px 0;
+}
+
+.chart-bar-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+}
+
+.chart-bar {
+    width: 100%;
+    background: linear-gradient(180deg, var(--accent-cyan), rgba(34, 211, 238, 0.3));
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+    transition: height 0.6s ease;
+    opacity: 0.7;
+}
+
+.chart-bar-group:hover .chart-bar {
+    opacity: 1;
+}
+
+.chart-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+.chart-value {
+    font-size: 9px;
+    color: var(--text-muted);
+}
+
 /* ─── Progress Bar ─── */
 .progress-bar {
     width: 100%;
