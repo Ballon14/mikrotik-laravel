@@ -26,6 +26,7 @@ function getCsrfToken() {
     const meta = document.querySelector('meta[name="csrf-token"]');
     return meta ? meta.getAttribute('content') : '';
 }
+window.getCsrfToken = getCsrfToken;
 
 // ─── API Layer ───
 async function apiFetch(endpoint) {
@@ -129,6 +130,7 @@ function escapeHtml(text) {
     div.textContent = String(text);
     return div.innerHTML;
 }
+window.escapeHtml = escapeHtml;
 
 function percentUsed(free, total) {
     if (!free || !total) return 0;

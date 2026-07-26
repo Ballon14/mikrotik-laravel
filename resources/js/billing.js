@@ -1,7 +1,4 @@
-// Make these available globally for app.js to call
-function esc(str) {
-    return String(str).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
+// window.escapeHtml() deprecated — use window.escapeHtml() instead
 
 const BILLING_PAGE_SIZE = 25;
 
@@ -55,13 +52,13 @@ window.loadPackages = async function(page) {
         tbody.innerHTML = data.data.data.map(p => `
             <tr>
                 <td>${p.id}</td>
-                <td><strong>${esc(p.name)}</strong></td>
+                <td><strong>${window.escapeHtml(p.name)}</strong></td>
                 <td>Rp ${Number(p.price).toLocaleString('id-ID')}</td>
-                <td>${esc(p.speed || '-')}</td>
-                <td>${periodLabels[p.billing_period] || esc(p.billing_period || '-')}</td>
-                <td>${esc(p.description || '-')}</td>
+                <td>${window.escapeHtml(p.speed || '-')}</td>
+                <td>${periodLabels[p.billing_period] || window.escapeHtml(p.billing_period || '-')}</td>
+                <td>${window.escapeHtml(p.description || '-')}</td>
                 <td>
-                    <button class="btn-edit" onclick="editPackage(${p.id},'${esc(p.name)}','${esc(p.price)}','${esc(p.speed || '')}','${esc(p.description || '')}','${esc(p.billing_period || '')}')">Edit</button>
+                    <button class="btn-edit" onclick="editPackage(${p.id},'${window.escapeHtml(p.name)}','${window.escapeHtml(p.price)}','${window.escapeHtml(p.speed || '')}','${window.escapeHtml(p.description || '')}','${window.escapeHtml(p.billing_period || '')}')">Edit</button>
                     <button class="btn-delete" onclick="deletePackage(${p.id})">Hapus</button>
                 </td>
             </tr>
@@ -359,7 +356,7 @@ async function saveCrud(url, method, data, callback, btn) {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-CSRF-TOKEN': window.getCsrfToken(),
                 'Accept': 'application/json'
             },
             body: method !== 'DELETE' ? JSON.stringify(data) : null
@@ -401,11 +398,11 @@ window.loadPayments = async function(page) {
         tbody.innerHTML = json.data.data.map(p => `
             <tr>
                 <td>${p.id}</td>
-                <td>${p.invoice ? esc(p.invoice.invoice_number) : '-'}</td>
+                <td>${p.invoice ? window.escapeHtml(p.invoice.invoice_number) : '-'}</td>
                 <td>${p.invoice?.customer?.name || '-'}</td>
                 <td>Rp ${Number(p.amount).toLocaleString('id-ID')}</td>
-                <td>${esc(p.payment_method || '-')}</td>
-                <td>${esc(p.reference || '-')}</td>
+                <td>${window.escapeHtml(p.payment_method || '-')}</td>
+                <td>${window.escapeHtml(p.reference || '-')}</td>
                 <td>${p.paid_at ? new Date(p.paid_at).toLocaleString('id-ID') : '-'}</td>
                 <td><button class="btn-delete" onclick="deletePayment(${p.id})">Hapus</button></td>
             </tr>
@@ -444,10 +441,10 @@ window.loadRouters = async function(page) {
         tbody.innerHTML = json.data.data.map(r => `
             <tr>
                 <td>${r.id}</td>
-                <td><strong>${esc(r.name)}</strong></td>
-                <td>${esc(r.host)}</td>
+                <td><strong>${window.escapeHtml(r.name)}</strong></td>
+                <td>${window.escapeHtml(r.host)}</td>
                 <td>${r.port}</td>
-                <td>${esc(r.username)}</td>
+                <td>${window.escapeHtml(r.username)}</td>
                 <td>${r.is_active ? '<span class="status-badge success">Aktif</span>' : '<span class="status-badge warning">Nonaktif</span>'}</td>
                 <td>
                     <button class="btn-edit" onclick="editRouter(${r.id})">Edit</button>
@@ -504,11 +501,11 @@ window.loadPppoeAccounts = async function(page) {
             return `
             <tr>
                 <td>${a.id}</td>
-                <td><strong>${esc(a.username)}</strong></td>
-                <td>${a.customer ? esc(a.customer.name) : '-'}</td>
-                <td>${a.router ? esc(a.router.name) : '-'}</td>
-                <td>${esc(a.profile || '-')}</td>
-                <td>${esc(a.ip_address || '-')}</td>
+                <td><strong>${window.escapeHtml(a.username)}</strong></td>
+                <td>${a.customer ? window.escapeHtml(a.customer.name) : '-'}</td>
+                <td>${a.router ? window.escapeHtml(a.router.name) : '-'}</td>
+                <td>${window.escapeHtml(a.profile || '-')}</td>
+                <td>${window.escapeHtml(a.ip_address || '-')}</td>
                 <td>${statusBadge}</td>
                 <td>${syncBadge}</td>
                 <td>
