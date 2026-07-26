@@ -120,8 +120,13 @@ Default admin login: `admin@billing.com` / `admin` — **change immediately in p
 
 ### 4. Run the Application
 
-Open three terminal windows:
+**Quick start (recommended):**
+```bash
+bin/start.sh
+```
+This starts all three processes (daemon, queue worker, web server) and shows their status.
 
+**Manual start** (three terminals):
 ```bash
 # Terminal 1 — Polling daemon (persistent connection to router)
 php artisan mikrotik:monitor
@@ -131,6 +136,11 @@ php artisan serve
 
 # Terminal 3 — Queue worker (required for billing sync)
 php artisan queue:work
+```
+
+**Stop all:**
+```bash
+bin/stop.sh
 ```
 
 ### 5. Access
@@ -143,6 +153,9 @@ Open **http://localhost:8000** in your browser.
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+
+# Use start script or Supervisor (recommended)
+bin/start.sh
 
 # Supervisor config for daemon
 # /etc/supervisor/conf.d/mikrotik-daemon.conf
