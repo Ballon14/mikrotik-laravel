@@ -95,12 +95,22 @@ class BillingController extends Controller
 
         $package = Package::create($validated);
 
+        AuditLog::create([
+            'action' => 'package_created',
+            'entity_type' => 'package',
+            'entity_id' => $package->id,
+            'description' => "Paket {$package->name} dibuat",
+            'new_values' => $package->toArray(),
+            'user_id' => Auth::id(),
+        ]);
+
         return response()->json(['success' => true, 'data' => $package]);
     }
 
     public function updatePackage(Request $request, $id)
     {
         $package = Package::findOrFail($id);
+        $original = $package->toArray();
         $validated = $request->validate([
             'name' => 'required|string',
             'price' => 'required|numeric|min:0',
@@ -110,13 +120,34 @@ class BillingController extends Controller
         ]);
 
         $package->update($validated);
+        $changed = $package->getChanges();
+
+        AuditLog::create([
+            'action' => 'package_updated',
+            'entity_type' => 'package',
+            'entity_id' => $package->id,
+            'description' => "Paket {$package->name} diupdate",
+            'old_values' => array_intersect_key($original, $changed),
+            'new_values' => $changed,
+            'user_id' => Auth::id(),
+        ]);
 
         return response()->json(['success' => true]);
     }
 
     public function destroyPackage($id)
     {
-        Package::findOrFail($id)->delete();
+        $package = Package::findOrFail($id);
+        $package->delete();
+
+        AuditLog::create([
+            'action' => 'package_deleted',
+            'entity_type' => 'package',
+            'entity_id' => $id,
+            'description' => "Paket {$package->name} dihapus",
+            'old_values' => $package->toArray(),
+            'user_id' => Auth::id(),
+        ]);
 
         return response()->json(['success' => true]);
     }
@@ -219,7 +250,17 @@ class BillingController extends Controller
             $account->delete();
         }
 
+        $customerName = $customer->name;
         $customer->delete();
+
+        AuditLog::create([
+            'action' => 'customer_deleted',
+            'entity_type' => 'customer',
+            'entity_id' => $id,
+            'description' => "Pelanggan {$customerName} dihapus",
+            'old_values' => ['name' => $customerName],
+            'user_id' => Auth::id(),
+        ]);
 
         return response()->json(['success' => true]);
     }
@@ -249,6 +290,15 @@ class BillingController extends Controller
             SyncPppoeToRouter::dispatch($account);
         }
 
+        AuditLog::create([
+            'action' => 'pppoe_account_created',
+            'entity_type' => 'pppoe_account',
+            'entity_id' => $account->id,
+            'description' => "Akun PPPoE {$account->username} dibuat",
+            'new_values' => $account->load('customer', 'router')->toArray(),
+            'user_id' => Auth::id(),
+        ]);
+
         return response()->json([
             'success' => true,
             'data' => $account->load('customer', 'router'),
@@ -258,6 +308,7 @@ class BillingController extends Controller
     public function updatePppoeAccount(Request $request, $id)
     {
         $account = PppoeAccount::findOrFail($id);
+        $original = $account->toArray();
         $validated = $request->validate([
             'router_id' => 'nullable|exists:routers,id',
             'password' => 'nullable|string|max:100',
@@ -270,6 +321,17 @@ class BillingController extends Controller
 
         SyncPppoeToRouter::dispatch($account);
 
+        $changed = $account->getChanges();
+        AuditLog::create([
+            'action' => 'pppoe_account_updated',
+            'entity_type' => 'pppoe_account',
+            'entity_id' => $account->id,
+            'description' => "Akun PPPoE {$account->username} diupdate",
+            'old_values' => array_intersect_key($original, $changed),
+            'new_values' => $changed,
+            'user_id' => Auth::id(),
+        ]);
+
         return response()->json(['success' => true]);
     }
 
@@ -278,6 +340,15 @@ class BillingController extends Controller
         $account = PppoeAccount::with('router')->findOrFail($id);
         $syncService->removeFromRouter($account);
         $account->delete();
+
+        AuditLog::create([
+            'action' => 'pppoe_account_deleted',
+            'entity_type' => 'pppoe_account',
+            'entity_id' => $id,
+            'description' => "Akun PPPoE {$account->username} dihapus",
+            'old_values' => $account->toArray(),
+            'user_id' => Auth::id(),
+        ]);
 
         return response()->json(['success' => true]);
     }
@@ -325,7 +396,16 @@ class BillingController extends Controller
             $validated['paid_at'] = now();
         }
 
-        Invoice::create($validated);
+        $invoice = Invoice::create($validated);
+
+        AuditLog::create([
+            'action' => 'invoice_created',
+            'entity_type' => 'invoice',
+            'entity_id' => $invoice->id,
+            'description' => "Tagihan {$invoice->invoice_number} dibuat",
+            'new_values' => $invoice->toArray(),
+            'user_id' => Auth::id(),
+        ]);
 
         return response()->json(['success' => true]);
     }
@@ -333,6 +413,7 @@ class BillingController extends Controller
     public function updateInvoice(Request $request, $id)
     {
         $invoice = Invoice::findOrFail($id);
+        $original = $invoice->toArray();
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'invoice_number' => 'required|string|unique:invoices,invoice_number,'.$id,
@@ -350,13 +431,34 @@ class BillingController extends Controller
         }
 
         $invoice->update($validated);
+        $changed = $invoice->getChanges();
+
+        AuditLog::create([
+            'action' => 'invoice_updated',
+            'entity_type' => 'invoice',
+            'entity_id' => $invoice->id,
+            'description' => "Tagihan {$invoice->invoice_number} diupdate",
+            'old_values' => array_intersect_key($original, $changed),
+            'new_values' => $changed,
+            'user_id' => Auth::id(),
+        ]);
 
         return response()->json(['success' => true]);
     }
 
     public function destroyInvoice($id)
     {
-        Invoice::findOrFail($id)->delete();
+        $invoice = Invoice::findOrFail($id);
+        $invoice->delete();
+
+        AuditLog::create([
+            'action' => 'invoice_deleted',
+            'entity_type' => 'invoice',
+            'entity_id' => $id,
+            'description' => "Tagihan {$invoice->invoice_number} dihapus",
+            'old_values' => $invoice->toArray(),
+            'user_id' => Auth::id(),
+        ]);
 
         return response()->json(['success' => true]);
     }
@@ -422,7 +524,17 @@ class BillingController extends Controller
 
     public function destroyPayment($id)
     {
-        Payment::findOrFail($id)->delete();
+        $payment = Payment::findOrFail($id);
+        $payment->delete();
+
+        AuditLog::create([
+            'action' => 'payment_deleted',
+            'entity_type' => 'payment',
+            'entity_id' => $id,
+            'description' => "Pembayaran #{$payment->id} dihapus",
+            'old_values' => $payment->toArray(),
+            'user_id' => Auth::id(),
+        ]);
 
         return response()->json(['success' => true]);
     }
@@ -452,6 +564,15 @@ class BillingController extends Controller
         $validated = $request->validated();
         $router = Router::create($validated);
 
+        AuditLog::create([
+            'action' => 'router_created',
+            'entity_type' => 'router',
+            'entity_id' => $router->id,
+            'description' => "Router {$router->name} ditambahkan",
+            'new_values' => $router->makeHidden('password')->toArray(),
+            'user_id' => Auth::id(),
+        ]);
+
         return response()->json([
             'success' => true,
             'data' => $router->makeHidden('password'),
@@ -461,6 +582,7 @@ class BillingController extends Controller
     public function updateRouter(Request $request, $id)
     {
         $router = Router::findOrFail($id);
+        $original = $router->toArray();
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'host' => 'required|string|max:255',
@@ -476,6 +598,17 @@ class BillingController extends Controller
         }
 
         $router->update($validated);
+        $changed = $router->getChanges();
+
+        AuditLog::create([
+            'action' => 'router_updated',
+            'entity_type' => 'router',
+            'entity_id' => $router->id,
+            'description' => "Router {$router->name} diupdate",
+            'old_values' => array_intersect_key($original, $changed),
+            'new_values' => $changed,
+            'user_id' => Auth::id(),
+        ]);
 
         return response()->json([
             'success' => true,
@@ -485,7 +618,17 @@ class BillingController extends Controller
 
     public function destroyRouter($id)
     {
-        Router::findOrFail($id)->delete();
+        $router = Router::findOrFail($id);
+        $router->delete();
+
+        AuditLog::create([
+            'action' => 'router_deleted',
+            'entity_type' => 'router',
+            'entity_id' => $id,
+            'description' => "Router {$router->name} dihapus",
+            'old_values' => $router->makeHidden('password')->toArray(),
+            'user_id' => Auth::id(),
+        ]);
 
         return response()->json(['success' => true]);
     }
