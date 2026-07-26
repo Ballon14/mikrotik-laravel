@@ -19,6 +19,25 @@ A modern, high-performance web dashboard for monitoring MikroTik RouterOS device
 - **Traffic History** — Per-interface RX/TX rate history with interactive charts
 - **Health Monitoring** — Daemon status endpoint, stale cache indicator, connection error banner
 
+### Daemon Cached Data
+
+| Cache Key | Source Command | Update Cycle |
+|-----------|---------------|--------------|
+| `mikrotik_data_resource` | `/system/resource/print` | Every 2s |
+| `mikrotik_data_interfaces` | `/interface/print` | Every 2s |
+| `mikrotik_data_identity` | `/system/identity/print` | Every 10s |
+| `mikrotik_data_dhcp` | `/ip/dhcp-server/lease/print` | Every 10s |
+| `mikrotik_data_routes` | `/ip/route/print` | Every 10s |
+| `mikrotik_data_fw_filter` | `/ip/firewall/filter/print` | Every 10s |
+| `mikrotik_data_fw_nat` | `/ip/firewall/nat/print` | Every 10s |
+| `mikrotik_data_arp` | `/ip/arp/print` | Every 10s |
+| `mikrotik_data_ip_addresses` | `/ip/address/print` | Every 10s |
+| `mikrotik_data_dns` | `/ip/dns/print` | Every 10s |
+| `mikrotik_data_logs` | `/log/print` (last 50) | Every 10s |
+| `mikrotik_data_hotspot_active` | `/ip/hotspot/active/print` | Every 10s |
+| `mikrotik_data_isolated_ips` | Derived from fw_filter | Every 10s |
+| `mikrotik_traffic_hist_{name}` | Rate calculation | Every 2s (60 data points) |
+
 ### ISP/PPPoE Billing
 - **Dashboard** — Stats (active/isolated/total customers), monthly revenue chart, recent payments
 - **Packages** — Define internet packages (name, price, speed, billing period)
@@ -31,13 +50,39 @@ A modern, high-performance web dashboard for monitoring MikroTik RouterOS device
 - **Audit Trail** — All changes logged with old/new values for traceability
 
 ### UX
-- Dark glassmorphism UI with responsive layout
-- Mobile card layout on small screens
+- Dark glassmorphism UI with responsive layout and mobile slide-out sidebar
 - PWA support (installable, offline-ready with service worker caching)
 - Pagination on all data tables
-- Confirmation dialogs before destructive actions
+- **Smart confirmation dialogs** — button text auto-adapts: "Hapus" for deletes, "Simpan" for saves, "Blokir"/"Buka Blokir" for isolation toggles
+- **Loading states** — submit buttons show "Menyimpan..." and disable during form submission (prevents double-click)
 - Toast notifications for success/error feedback
-- Lucide icon set
+- Lucide icon set with consistent styling
+- Sidebar badges showing live counts (interfaces, DHCP, ARP, routes, firewall, hotspot, IPs, isolated)
+
+## Sidebar Navigation
+
+| Section | Page | Badge | Description |
+|---------|------|-------|-------------|
+| **Billing System** | Dashboard | — | Billing overview: active customers, revenue, recent payments |
+| | Packages | — | Internet package definitions (name, price, speed, billing period) |
+| | Customers | — | Customer registry with PPPoE credentials and status |
+| | Invoices | — | Bill generation, payment tracking, overdue management |
+| | Payments | — | Payment records with auto-invoice status updates |
+| | PPPoE Accounts | — | PPPoE secrets management with one-click sync to router |
+| | Routers | — | Multi-router credential storage (passwords hidden in API) |
+| | Audit Logs | — | Full CRUD audit trail with old/new value diffs |
+| **Monitoring** | System Overview | — | CPU, RAM, storage, uptime, traffic charts, quick stats |
+| | Interfaces | count | Interface list with status, MAC, traffic totals |
+| | DHCP Leases | count | DHCP lease table with CRUD and one-click IP isolation |
+| | ARP Table | count | ARP entries with isolation status indicators |
+| **Network** | IP Addresses | count | Router IP address management with CRUD |
+| | Routing Table | count | Active/inactive routes |
+| | Firewall Rules | count | Filter + NAT rules with full CRUD (total count badge) |
+| | IP Isolation | count | Isolate/unisolate IPs via automated firewall rules (red badge if any) |
+| **Services** | Hotspot Active | count | Currently active hotspot users |
+| | System Logs | — | Real-time system log viewer with severity coloring |
+
+Count badges update live from cache on every polling cycle.
 
 ## Architecture
 
@@ -68,6 +113,15 @@ A modern, high-performance web dashboard for monitoring MikroTik RouterOS device
 ```
 
 The daemon opens a **single persistent TCP connection** to the router and continuously polls data, storing results in Laravel's cache. The web dashboard reads from cache only — never connecting to the router directly on page requests. This prevents login spam in Winbox logs and keeps page loads sub-millisecond.
+
+### Daemon Health Check
+
+The frontend polls `/api/daemon-status` every 5 seconds:
+
+- **Healthy**: Green connection indicator, live data updates
+- **3 consecutive failures**: Polling stops automatically, warning banner appears with "Coba Lagi" button
+- **Reconnection**: Click "Coba Lagi" or fix the connection — polling resumes automatically
+- **Stale cache**: On transient errors, the daemon preserves the last successful cache entry (TTL: 180s), preventing blank UI
 
 ## Prerequisites
 
@@ -149,28 +203,64 @@ Open **http://localhost:8000** in your browser.
 ### Production Deployment
 
 ```bash
-# Optimize
+# Optimize Laravel
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Use start script or Supervisor (recommended)
-bin/start.sh
+# Build frontend
+npm run build
+```
 
-# Supervisor config for daemon
+**Supervisor** is required for the daemon and queue worker (they must survive SSH disconnects and server restarts):
+
+```bash
 # /etc/supervisor/conf.d/mikrotik-daemon.conf
 [program:mikrotik-daemon]
 command=php /path/to/artisan mikrotik:monitor
 autostart=true
 autorestart=true
 user=www-data
+directory=/path/to/project
+stdout_logfile=/path/to/project/storage/logs/daemon.log
+stderr_logfile=/path/to/project/storage/logs/daemon.log
 
-# Supervisor config for queue worker
+# /etc/supervisor/conf.d/mikrotik-queue.conf
 [program:mikrotik-queue]
 command=php /path/to/artisan queue:work --sleep=3 --tries=3
 autostart=true
 autorestart=true
 user=www-data
+directory=/path/to/project
+stdout_logfile=/path/to/project/storage/logs/queue.log
+stderr_logfile=/path/to/project/storage/logs/queue.log
+```
+
+Then reload Supervisor:
+```bash
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start all
+```
+
+### Maintenance
+
+```bash
+# Regenerate all cache (after config changes)
+php artisan optimize:clear
+php artisan optimize
+
+# Restart daemon after code updates
+bin/stop.sh && bin/start.sh
+
+# View daemon logs
+tail -f storage/logs/daemon.log
+
+# Check failed queue jobs
+php artisan queue:failed
+
+# List all artisan commands
+php artisan list | grep mikrotik
 ```
 
 ## API Endpoints
@@ -228,6 +318,30 @@ All API endpoints under `/api` require authentication (except `/api/health` and 
 | `GET /api/audit-logs` | Audit trail (paginated) |
 
 Support `?all=true` on list endpoints to bypass pagination and return all records.
+
+### Audit Trail
+
+The following operations are logged to the `audit_logs` table with old/new values:
+
+| Action | Entity | Triggered By |
+|--------|--------|-------------|
+| `package_created` | Package | Form submit |
+| `package_updated` | Package | Form submit (with value diff) |
+| `package_deleted` | Package | Delete button |
+| `customer_created` | Customer | Form submit |
+| `customer_updated` | Customer | Form submit (with value diff) |
+| `customer_deleted` | Customer | Delete button |
+| `invoice_created` | Invoice | Form submit |
+| `invoice_updated` | Invoice | Form submit (with value diff) |
+| `invoice_deleted` | Invoice | Delete button |
+| `payment_recorded` | Payment | Payment form submit |
+| `payment_deleted` | Payment | Delete button |
+| `router_created` | Router | Form submit |
+| `router_updated` | Router | Form submit (with value diff) |
+| `router_deleted` | Router | Delete button |
+| `pppoe_account_created` | PPPoE Account | Form submit |
+| `pppoe_account_updated` | PPPoE Account | Form submit (with value diff) |
+| `pppoe_account_deleted` | PPPoE Account | Delete button |
 
 ## Project Structure
 
