@@ -16,6 +16,9 @@ const state = {
     pendingConfirm: null,
     sectionTimestamps: {},
     pages: {},
+    daemonFailCount: 0,
+    daemonHealthy: false,
+    billingIntervalId: null,
 };
 
 // ─── CSRF Token ───
@@ -273,10 +276,87 @@ function setupTableScrollHints() {
     });
 }
 
+// ─── Daemon Health Check ───
+async function checkDaemonHealth() {
+    try {
+        const res = await fetch('/api/daemon-status');
+        const json = await res.json();
+        const healthy = json.data && json.data.healthy === true;
+        state.daemonHealthy = healthy;
+
+        if (healthy) {
+            state.daemonFailCount = 0;
+            hideDaemonWarning();
+        } else {
+            state.daemonFailCount++;
+            showDaemonWarning();
+        }
+        return healthy;
+    } catch (e) {
+        state.daemonHealthy = false;
+        state.daemonFailCount++;
+        showDaemonWarning();
+        return false;
+    }
+}
+
+function showDaemonWarning() {
+    const existing = document.getElementById('daemonWarningBanner');
+    if (existing) return;
+    const banner = document.createElement('div');
+    banner.id = 'daemonWarningBanner';
+    banner.className = 'daemon-banner daemon-banner-warning';
+    banner.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 20px;margin-bottom:20px;border-radius:var(--radius-sm);background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);font-size:13px;color:var(--text-secondary);';
+    banner.innerHTML = `
+        <i data-lucide="alert-triangle" style="width:18px;height:18px;color:#fbbf24;flex-shrink:0;"></i>
+        <span style="flex:1;">Daemon tidak terhubung ke router. Data monitoring tidak tersedia.</span>
+        <button class="btn-cancel" id="retryDaemonBtn" style="flex-shrink:0;padding:6px 14px;font-size:12px;cursor:pointer;">Coba Lagi</button>
+    `;
+    const pageContent = document.querySelector('.page-content');
+    if (pageContent) {
+        pageContent.insertBefore(banner, pageContent.firstChild);
+        lucide.createIcons();
+    }
+    const retryBtn = document.getElementById('retryDaemonBtn');
+    if (retryBtn) retryBtn.addEventListener('click', retryDaemon);
+}
+
+function hideDaemonWarning() {
+    const banner = document.getElementById('daemonWarningBanner');
+    if (banner) banner.remove();
+}
+
+async function retryDaemon() {
+    const retryBtn = document.getElementById('retryDaemonBtn');
+    if (retryBtn) retryBtn.textContent = 'Menghubungkan...';
+    const healthy = await checkDaemonHealth();
+    if (healthy) {
+        hideDaemonWarning();
+        if (state.intervalId) clearInterval(state.intervalId);
+        state.intervalId = setInterval(() => {
+            if (!state.isRefreshing && !state.modalOpen) {
+                loadSectionData(state.activeSection);
+            }
+        }, state.refreshInterval);
+        await loadSectionData(state.activeSection);
+        showToast('Daemon terhubung kembali', 'success');
+    } else {
+        if (retryBtn) retryBtn.textContent = 'Coba Lagi';
+    }
+}
+
 // ─── Data Loading ───
 async function loadSectionData(section) {
-    // Skip refresh when modal is open
     if (state.modalOpen) return;
+
+    if (state.daemonFailCount >= 3) {
+        return;
+    }
+
+    if (!state.daemonHealthy && state.daemonFailCount > 0 && state.daemonFailCount < 3) {
+        await checkDaemonHealth();
+        if (!state.daemonHealthy) return;
+    }
 
     const spinner = document.getElementById("refreshSpinner");
     if (spinner) spinner.classList.add("active");
@@ -325,6 +405,7 @@ async function loadSectionData(section) {
                 break;
         }
         updateConnectionStatus(true);
+        state.daemonFailCount = 0;
     } catch (err) {
         updateConnectionStatus(false, err.message);
         updateStaleIndicator(state.activeSection, true);
@@ -457,13 +538,14 @@ async function loadOverview() {
         state.data.identity = identity;
         state.data.daemonStatus = daemonStatus;
 
-        // Check daemon health
+        // Check daemon health — global banner handles daemon offline case
         const daemonOk = daemonStatus && daemonStatus.healthy === true;
-        if (!daemonOk) {
+        const globalWarning = document.getElementById('daemonWarningBanner');
+        if (!daemonOk && !globalWarning) {
             showBanner(bannerEl, "Daemon monitoring tidak merespon. Data mungkin tidak diperbarui.", "warning");
-        } else if (!resource) {
+        } else if (daemonOk && !resource) {
             showBanner(bannerEl, "Data router tidak tersedia. Pastikan daemon polling berjalan.", "warning");
-        } else {
+        } else if (daemonOk && resource) {
             hideBanner(bannerEl);
         }
 
@@ -2048,6 +2130,9 @@ async function init() {
     
     state.activeSection = section;
 
+    // Check daemon health first
+    await checkDaemonHealth();
+
     // Load initial data
     await loadSectionData(section);
 
@@ -2063,11 +2148,13 @@ async function init() {
         } catch (e) {}
     }
 
-    state.intervalId = setInterval(() => {
-        if (!state.isRefreshing && !state.modalOpen) {
-            loadSectionData(state.activeSection);
-        }
-    }, state.refreshInterval);
+    if (state.daemonFailCount < 3) {
+        state.intervalId = setInterval(() => {
+            if (!state.isRefreshing && !state.modalOpen) {
+                loadSectionData(state.activeSection);
+            }
+        }, state.refreshInterval);
+    }
 }
 
 // ─── Header Billing Shortcut ───
