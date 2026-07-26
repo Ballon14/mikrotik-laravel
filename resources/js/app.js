@@ -466,29 +466,50 @@ function showToast(message, type = "error") {
 }
 
 // ─── Confirmation Dialog ───
-function showConfirm(message) {
+function showConfirm(message, action) {
     return new Promise((resolve) => {
         const modal = document.getElementById("confirmModal");
         const msgEl = document.getElementById("confirmMessage");
+        const titleEl = document.getElementById("confirmModalTitle");
+        const confirmBtn = document.getElementById("confirmDelete");
         const cancelBtn = document.getElementById("confirmCancel");
-        const deleteBtn = document.getElementById("confirmDelete");
 
         if (!modal) { resolve(false); return; }
 
         msgEl.textContent = message;
+
+        const lower = message.toLowerCase();
+        if (action === "delete" || lower.includes("hapus") || lower.includes("menghapus")) {
+            titleEl.textContent = "Konfirmasi Hapus";
+            confirmBtn.textContent = "Hapus";
+            confirmBtn.className = "btn-delete";
+        } else if (action === "block" || lower.includes("blokir")) {
+            titleEl.textContent = "Konfirmasi Blokir";
+            confirmBtn.textContent = "Blokir";
+            confirmBtn.className = "btn-delete";
+        } else if (action === "unblock" || lower.includes("buka blokir")) {
+            titleEl.textContent = "Konfirmasi Buka Blokir";
+            confirmBtn.textContent = "Buka Blokir";
+            confirmBtn.className = "btn-delete";
+        } else {
+            titleEl.textContent = "Konfirmasi";
+            confirmBtn.textContent = "Simpan";
+            confirmBtn.className = "btn-delete";
+        }
+
         modal.classList.add("show");
 
         const cleanup = () => {
             modal.classList.remove("show");
             cancelBtn.removeEventListener("click", onCancel);
-            deleteBtn.removeEventListener("click", onConfirm);
+            confirmBtn.removeEventListener("click", onConfirm);
         };
 
         const onCancel = () => { cleanup(); resolve(false); };
         const onConfirm = () => { cleanup(); resolve(true); };
 
         cancelBtn.addEventListener("click", onCancel);
-        deleteBtn.addEventListener("click", onConfirm);
+        confirmBtn.addEventListener("click", onConfirm);
     });
 }
 // Expose globally for billing.js
@@ -1346,7 +1367,7 @@ window.quickIsolate = async function(ip) {
 };
 
 window.quickUnisolate = async function(ip) {
-    const confirmed = await showConfirm(`Unisolasi IP ${ip}? Traffic akan dikembalikan normal.`);
+    const confirmed = await showConfirm(`Unisolasi IP ${ip}? Traffic akan dikembalikan normal.`, "unblock");
     if (!confirmed) return;
     try {
         await apiPost("/api/unisolate-ip", { ip });

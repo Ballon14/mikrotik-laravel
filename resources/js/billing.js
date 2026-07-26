@@ -327,23 +327,10 @@ window.deletePackage = function(id) { confirmDeleteAction('packages', id, window
 window.deleteCustomer = function(id) { confirmDeleteAction('customers', id, window.loadCustomers); };
 window.deleteInvoice = function(id) { confirmDeleteAction('invoices', id, window.loadInvoices); };
 
-function confirmDeleteAction(resource, id, callback) {
-    const confirmModal = document.getElementById('confirmModal');
-    if (!confirmModal) return;
-    
-    confirmModal.classList.add('active');
-    
-    const handler = async function() {
-        await saveCrud(`/api/${resource}/${id}`, 'DELETE', {}, callback);
-        confirmModal.classList.remove('active');
-        document.getElementById('confirmDelete').removeEventListener('click', handler);
-    };
-    
-    document.getElementById('confirmDelete').addEventListener('click', handler, {once: true});
-    document.getElementById('confirmCancel').addEventListener('click', () => {
-        confirmModal.classList.remove('active');
-        document.getElementById('confirmDelete').removeEventListener('click', handler);
-    }, {once: true});
+async function confirmDeleteAction(resource, id, callback) {
+    const confirmed = await showConfirm("Apakah Anda yakin ingin menghapus item ini?", "delete");
+    if (!confirmed) return;
+    await saveCrud(`/api/${resource}/${id}`, 'DELETE', {}, callback);
 }
 
 // Helpers
