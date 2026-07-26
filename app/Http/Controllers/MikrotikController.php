@@ -176,7 +176,7 @@ class MikrotikController extends Controller
 
     public function hotspot()
     {
-        $data = Cache::get('mikrotik_data_wireless', []);
+        $data = Cache::get('mikrotik_data_hotspot_active', []);
 
         return $this->response($data);
     }
