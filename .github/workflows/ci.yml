@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: [8.2, 8.3, 8.4]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: sockets, mbstring, pdo_sqlite
+          tools: composer:v2
+          coverage: none
+
+      - name: Composer install
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Setup .env
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Database
+        run: |
+          touch database/database.sqlite
+          php artisan migrate --force
+
+      - name: NPM install & build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Code style (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Tests
+        run: php artisan test
