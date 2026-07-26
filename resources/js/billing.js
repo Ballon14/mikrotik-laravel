@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await saveCrud(id ? `/api/packages/${id}` : '/api/packages', id ? 'PUT' : 'POST', data, () => {
                 modalPackage.classList.remove('active');
                 window.loadPackages();
-            });
+            }, e.currentTarget.querySelector('button[type="submit"]'));
         });
     }
 
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await saveCrud(id ? `/api/customers/${id}` : '/api/customers', id ? 'PUT' : 'POST', data, () => {
                 modalCustomer.classList.remove('active');
                 window.loadCustomers();
-            });
+            }, e.currentTarget.querySelector('button[type="submit"]'));
         });
     }
 
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await saveCrud(id ? `/api/invoices/${id}` : '/api/invoices', id ? 'PUT' : 'POST', data, () => {
                 modalInvoice.classList.remove('active');
                 window.loadInvoices();
-            });
+            }, e.currentTarget.querySelector('button[type="submit"]'));
         });
     }
 });
@@ -348,7 +348,12 @@ async function loadCustomerOptions() {
     select.innerHTML = '<option value="">— Pilih Pelanggan —</option>' + data.data.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 }
 
-async function saveCrud(url, method, data, callback) {
+async function saveCrud(url, method, data, callback, btn) {
+    if (btn) {
+        btn.disabled = true;
+        btn._origText = btn.textContent;
+        btn.textContent = 'Menyimpan...';
+    }
     try {
         const res = await fetch(url, {
             method: method,
@@ -370,6 +375,11 @@ async function saveCrud(url, method, data, callback) {
         }
     } catch (e) {
         showToast('Error jaringan', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = btn._origText || 'Simpan';
+        }
     }
 }
 
@@ -584,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await saveCrud('/api/payments', 'POST', data, () => {
                 modalPayment.classList.remove('active');
                 window.loadPayments();
-            });
+            }, e.currentTarget.querySelector('button[type="submit"]'));
         });
     }
 
@@ -622,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await saveCrud(id ? `/api/routers/${id}` : '/api/routers', id ? 'PUT' : 'POST', data, () => {
                 modalRouter.classList.remove('active');
                 window.loadRouters();
-            });
+            }, e.currentTarget.querySelector('button[type="submit"]'));
         });
     }
 
@@ -659,7 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await saveCrud(id ? `/api/pppoe-accounts/${id}` : '/api/pppoe-accounts', id ? 'PUT' : 'POST', data, () => {
                 modalPppoe.classList.remove('active');
                 window.loadPppoeAccounts();
-            });
+            }, e.currentTarget.querySelector('button[type="submit"]'));
         });
     }
 
