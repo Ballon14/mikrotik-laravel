@@ -253,7 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 customer_id: document.getElementById('invCustomer').value,
                 amount: document.getElementById('invAmount').value,
                 due_date: document.getElementById('invDueDate').value,
-                status: document.getElementById('invStatus').value
+                status: document.getElementById('invStatus').value,
+                period_start: document.getElementById('invPeriodStart').value || null,
+                period_end: document.getElementById('invPeriodEnd').value || null
             };
 
             const action = id ? 'mengupdate' : 'menambahkan';
@@ -312,6 +314,8 @@ window.editInvoice = async function(id) {
         document.getElementById('invAmount').value = i.amount;
         document.getElementById('invDueDate').value = i.due_date;
         document.getElementById('invStatus').value = i.status;
+        document.getElementById('invPeriodStart').value = i.period_start || '';
+        document.getElementById('invPeriodEnd').value = i.period_end || '';
         
         document.getElementById('invoiceModalTitle').textContent = 'Edit Tagihan';
         document.getElementById('invoiceModal').classList.add('active');

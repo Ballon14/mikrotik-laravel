@@ -55,6 +55,16 @@
             </div>
             <div class="form-row">
                 <div class="form-group">
+                    <label for="invPeriodStart">Periode Mulai</label>
+                    <input type="date" id="invPeriodStart" name="period_start">
+                </div>
+                <div class="form-group">
+                    <label for="invPeriodEnd">Periode Selesai</label>
+                    <input type="date" id="invPeriodEnd" name="period_end">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
                     <label for="invDueDate">Jatuh Tempo</label>
                     <input type="date" id="invDueDate" name="due_date" required>
                 </div>
