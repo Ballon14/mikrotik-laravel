@@ -373,13 +373,13 @@ html {
 
 /* Sidebar footer */
 .sidebar-footer {
-    padding: 12px 20px;
+    padding: 10px 12px;
     border-top: 1px solid var(--border-color);
     font-size: 11px;
     color: var(--text-muted);
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .sidebar-footer-row {
@@ -388,6 +388,7 @@ html {
     gap: 8px;
     width: 100%;
     justify-content: space-between;
+    padding: 0 8px;
 }
 
 .refresh-indicator {
@@ -413,6 +414,39 @@ html {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+.sidebar-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.sidebar-logout-btn:hover {
+    background: rgba(248, 113, 113, 0.08);
+    color: var(--accent-red);
+}
+
+.sidebar-logout-btn i {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.sidebar-logout-btn span {
+    flex: 1;
+    text-align: left;
 }
 
 /* ─── Main Content ─── */
