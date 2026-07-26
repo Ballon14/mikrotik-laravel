@@ -429,19 +429,44 @@ html {
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
-    transition: all var(--transition-fast);
+    font-family: inherit;
+    line-height: 1;
+    user-select: none;
     text-decoration: none;
+    transition: all var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
 }
 
 .sidebar-logout-btn:hover {
-    background: rgba(248, 113, 113, 0.08);
+    background: rgba(248, 113, 113, 0.12);
     color: var(--accent-red);
+}
+
+.sidebar-logout-btn:active {
+    background: rgba(248, 113, 113, 0.18);
+    transform: scale(0.97);
+}
+
+.sidebar-logout-btn:focus-visible {
+    outline: 2px solid var(--accent-cyan);
+    outline-offset: 2px;
+}
+
+.sidebar-logout-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .sidebar-logout-btn i {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
+    transition: transform var(--transition-fast);
+}
+
+.sidebar-logout-btn:hover i {
+    transform: translateX(2px);
 }
 
 .sidebar-logout-btn span {

@@ -2198,8 +2198,18 @@ async function loadBillingShortcut() {
 
 document.addEventListener("DOMContentLoaded", () => {
     loadBillingShortcut();
-    // Refresh billing shortcut every 30s
     setInterval(loadBillingShortcut, 30000);
+
+    // ─── Logout — disable button on submit to prevent double-click ───
+    const logoutForm = document.getElementById("logoutForm");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const logoutText = document.getElementById("logoutBtnText");
+    if (logoutForm && logoutBtn) {
+        logoutForm.addEventListener("submit", () => {
+            logoutBtn.disabled = true;
+            if (logoutText) logoutText.textContent = "Logout...";
+        });
+    }
 });
 
 document.addEventListener("DOMContentLoaded", init);

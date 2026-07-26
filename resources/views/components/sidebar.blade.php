@@ -151,11 +151,11 @@
             <span>v1.2</span>
         </div>
 
-        <form action="{{ route('logout') }}" method="POST">
+        <form action="{{ route('logout') }}" method="POST" id="logoutForm">
             @csrf
-            <button type="submit" class="sidebar-logout-btn">
+            <button type="submit" class="sidebar-logout-btn" id="logoutBtn">
                 <i data-lucide="log-out"></i>
-                <span>Logout</span>
+                <span id="logoutBtnText">Logout</span>
             </button>
         </form>
     </div>
