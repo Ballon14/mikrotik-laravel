@@ -39,7 +39,7 @@ export default function PppoeAccountsPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     try {
-      const payload = { ...form, customer_id: Number(form.customer_id), router_id: form.router_id ? Number(form.router_id) : null }
+      const payload = { ...form, customer_id: form.customer_id ? Number(form.customer_id) : null, router_id: form.router_id ? Number(form.router_id) : null }
       if (modal?.id) await apiPut(`/api/pppoe-accounts/${modal.id}`, payload)
       else await apiPost('/api/pppoe-accounts', payload)
       setModal(null); load()

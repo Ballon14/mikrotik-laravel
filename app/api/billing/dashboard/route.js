@@ -33,21 +33,19 @@ export const GET = withAuth(async () => {
     }),
   ])
 
-  // Monthly revenue data for the year
+  // Monthly revenue data for the year (single query)
+  const monthlyPaid = await prisma.$queryRawUnsafe(`
+    SELECT CAST(strftime('%m', paidAt) AS INTEGER) AS month,
+           COALESCE(SUM(amount), 0) AS total
+    FROM Invoice
+    WHERE status = 'paid'
+      AND paidAt >= ? AND paidAt < ?
+    GROUP BY strftime('%m', paidAt)
+  `, new Date(currentYear, 0, 1), new Date(currentYear + 1, 0, 1))
+
   const monthlyData = {}
-  for (let m = 1; m <= 12; m++) {
-    const result = await prisma.invoice.aggregate({
-      _sum: { amount: true },
-      where: {
-        status: 'paid',
-        paidAt: {
-          gte: new Date(currentYear, m - 1, 1),
-          lt: new Date(currentYear, m, 1),
-        },
-      },
-    })
-    monthlyData[String(m)] = result._sum.amount || 0
-  }
+  for (let m = 1; m <= 12; m++) monthlyData[String(m)] = 0
+  for (const row of monthlyPaid) monthlyData[String(row.month)] = Number(row.total)
 
   return success({
     activeCustomers,
