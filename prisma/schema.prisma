@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  auditLogs AuditLog[]
+}
+
+model Session {
+  id            String  @id
+  userId        Int
+  ipAddress     String?
+  userAgent     String?
+  payload       String
+  lastActivity  Int
+}
+
+model Cache {
+  key        String   @id
+  value      String
+  expiration Int
+}
+
+model CacheLock {
+  key        String  @id
+  owner      String
+  expiration Int
+}
+
+model Job {
+  id           Int      @id @default(autoincrement())
+  queue        String
+  payload      String
+  attempts     Int      @default(0)
+  reservedAt   Int?
+  availableAt  Int
+  createdAt    Int
+}
+
+model JobBatch {
+  id             String  @id
+  name           String
+  totalJobs      Int
+  pendingJobs    Int
+  failedJobs     Int
+  failedJobIds   String
+  options        String?
+  createdAt      Int
+  cancelledAt    Int?
+  finishedAt     Int?
+}
+
+model FailedJob {
+  id         Int      @id @default(autoincrement())
+  uuid       String   @unique
+  connection String
+  queue      String
+  payload    String
+  exception  String
+  failedAt   DateTime @default(now())
+}
+
+model Package {
+  id            Int         @id @default(autoincrement())
+  name          String
+  price         Float
+  speed         String?
+  description   String?
+  billingPeriod String?     @default("monthly")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  customers     Customer[]
+}
+
+model Customer {
+  id            Int           @id @default(autoincrement())
+  name          String
+  nik           String?
+  phone         String?
+  email         String?
+  address       String?
+  pppoeUsername String        @unique
+  pppoePassword String
+  packageId     Int
+  package       Package       @relation(fields: [packageId], references: [id])
+  status        String        @default("inactive")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  invoices      Invoice[]
+  pppoeAccounts PppoeAccount[]
+}
+
+model Invoice {
+  id            Int         @id @default(autoincrement())
+  customerId    Int
+  customer      Customer    @relation(fields: [customerId], references: [id])
+  invoiceNumber String      @unique
+  amount        Float
+  status        String      @default("unpaid")
+  dueDate       String
+  paidAt        DateTime?
+  periodStart   String?
+  periodEnd     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  payments      Payment[]
+}
+
+model Payment {
+  id            Int      @id @default(autoincrement())
+  invoiceId     Int
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id])
+  amount        Float
+  paymentMethod String?
+  reference     String?
+  notes         String?
+  paidAt        DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Router {
+  id         Int           @id @default(autoincrement())
+  name       String
+  host       String
+  port       Int           @default(8728)
+  username   String
+  password   String
+  apiPort    Int?
+  isActive   Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  pppoeAccounts PppoeAccount[]
+}
+
+model PppoeAccount {
+  id          Int      @id @default(autoincrement())
+  customerId  Int
+  customer    Customer @relation(fields: [customerId], references: [id])
+  routerId    Int?
+  router      Router?  @relation(fields: [routerId], references: [id])
+  username    String   @unique
+  password    String
+  profile     String?
+  ipAddress   String?
+  service     String   @default("pppoe")
+  disabled    Boolean  @default(false)
+  lastSyncAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  action      String
+  entityType  String
+  entityId    Int?
+  description String?
+  oldValues   String?
+  newValues   String?
+  userId      Int?
+  user        User?    @relation(fields: [userId], references: [id])
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+}
