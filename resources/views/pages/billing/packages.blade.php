@@ -6,9 +6,14 @@
 <div class="card">
     <div class="card-header">
         <h3><i data-lucide="credit-card" style="width:16px;height:16px;"></i> Data Paket Internet</h3>
-        <button class="btn-action btn-add" id="btnAddPackage" title="Tambah Paket">
-            <i data-lucide="plus" style="width:14px;height:14px;"></i> Tambah Paket
-        </button>
+        <div style="display:flex;gap:8px;">
+            <button class="btn-action" id="btnSyncPackages" title="Sync dari MikroTik PPP Profile" style="background:var(--color-primary);color:var(--text-inverted);">
+                <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Sync MikroTik
+            </button>
+            <button class="btn-action btn-add" id="btnAddPackage" title="Tambah Paket">
+                <i data-lucide="plus" style="width:14px;height:14px;"></i> Tambah Paket
+            </button>
+        </div>
     </div>
     <div class="card-body">
         <div class="data-table-wrapper">

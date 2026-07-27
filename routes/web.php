@@ -127,6 +127,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/packages', [BillingController::class, 'storePackage']);
         Route::put('/packages/{id}', [BillingController::class, 'updatePackage']);
         Route::delete('/packages/{id}', [BillingController::class, 'destroyPackage']);
+        Route::post('/packages/sync', [BillingController::class, 'syncPackages']);
 
         Route::get('/customers', [BillingController::class, 'customers']);
         Route::post('/customers', [BillingController::class, 'storeCustomer']);

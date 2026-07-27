@@ -18,17 +18,29 @@
     </div>
 
     @php
-        $fwFilter = Cache::get('mikrotik_data_fw_filter', []);
-        $fwNat = Cache::get('mikrotik_data_fw_nat', []);
+        $cacheKeys = [
+            'mikrotik_data_fw_filter',
+            'mikrotik_data_fw_nat',
+            'mikrotik_data_interfaces',
+            'mikrotik_data_dhcp',
+            'mikrotik_data_arp',
+            'mikrotik_data_routes',
+            'mikrotik_data_hotspot_active',
+            'mikrotik_data_ip_addresses',
+            'mikrotik_data_isolated_ips',
+        ];
+        $cached = Cache::getMultiple($cacheKeys, []);
+        $fwFilter = $cached['mikrotik_data_fw_filter'] ?? [];
+        $fwNat = $cached['mikrotik_data_fw_nat'] ?? [];
         $counts = [
-            'interfaces' => count(Cache::get('mikrotik_data_interfaces', [])) ?: '-',
-            'dhcp' => count(Cache::get('mikrotik_data_dhcp', [])) ?: '-',
-            'arp' => count(Cache::get('mikrotik_data_arp', [])) ?: '-',
-            'routes' => count(Cache::get('mikrotik_data_routes', [])) ?: '-',
-            'hotspot' => count(Cache::get('mikrotik_data_hotspot_active', [])) ?: '-',
-            'ip_addresses' => count(Cache::get('mikrotik_data_ip_addresses', [])) ?: '-',
-            'firewall' => count($fwFilter) + count($fwNat) ?: '-',
-            'isolated' => count(Cache::get('mikrotik_data_isolated_ips', [])) ?: '-',
+            'interfaces' => count($cached['mikrotik_data_interfaces'] ?? []) ?: '-',
+            'dhcp' => count($cached['mikrotik_data_dhcp'] ?? []) ?: '-',
+            'arp' => count($cached['mikrotik_data_arp'] ?? []) ?: '-',
+            'routes' => count($cached['mikrotik_data_routes'] ?? []) ?: '-',
+            'hotspot' => count($cached['mikrotik_data_hotspot_active'] ?? []) ?: '-',
+            'ip_addresses' => count($cached['mikrotik_data_ip_addresses'] ?? []) ?: '-',
+            'firewall' => (count($fwFilter) + count($fwNat)) ?: '-',
+            'isolated' => count($cached['mikrotik_data_isolated_ips'] ?? []) ?: '-',
         ];
     @endphp
 

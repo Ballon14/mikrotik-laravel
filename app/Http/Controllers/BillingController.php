@@ -16,6 +16,7 @@ use App\Models\Package;
 use App\Models\Payment;
 use App\Models\PppoeAccount;
 use App\Models\Router;
+use App\Services\MikrotikService;
 use App\Services\PppoeSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -46,7 +47,7 @@ class BillingController extends Controller
 
         $monthlyData = Invoice::where('status', 'paid')
             ->whereYear('paid_at', now()->year)
-            ->selectRaw("SUM(amount) as total")
+            ->selectRaw('SUM(amount) as total')
             ->selectRaw($monthExpr)
             ->groupBy('month')
             ->orderBy('month')
@@ -150,6 +151,56 @@ class BillingController extends Controller
         ]);
 
         return response()->json(['success' => true]);
+    }
+
+    public function syncPackages(MikrotikService $mikrotikService)
+    {
+        try {
+            $profiles = $mikrotikService->getPppProfiles();
+
+            if (! is_array($profiles)) {
+                throw new \Exception('Gagal mengambil data dari router MikroTik');
+            }
+
+            $added = 0;
+            foreach ($profiles as $profile) {
+                // Ignore default profiles that are usually built-in
+                if ($profile['name'] === 'default' || $profile['name'] === 'default-encryption') {
+                    continue;
+                }
+
+                $exists = Package::where('name', $profile['name'])->exists();
+                if (! $exists) {
+                    Package::create([
+                        'name' => $profile['name'],
+                        'price' => 0, // Admin must edit this later
+                        'speed' => $profile['rate-limit'] ?? null,
+                        'billing_period' => 'monthly', // Default assumption
+                        'description' => 'Disinkronkan dari MikroTik PPP Profile',
+                    ]);
+                    $added++;
+                }
+            }
+
+            if ($added > 0) {
+                AuditLog::create([
+                    'action' => 'packages_synced',
+                    'entity_type' => 'package',
+                    'description' => "$added paket disinkronkan dari MikroTik",
+                    'user_id' => Auth::id(),
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Berhasil sinkronisasi. $added paket baru ditambahkan.",
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
     // ─── Customers ───
@@ -546,7 +597,7 @@ class BillingController extends Controller
         if (request('all')) {
             return response()->json([
                 'success' => true,
-                'data' => Router::orderBy('id', 'desc')->get()->through(function ($router) {
+                'data' => Router::orderBy('id', 'desc')->get()->map(function ($router) {
                     return $router->makeHidden('password');
                 })->toArray(),
             ]);

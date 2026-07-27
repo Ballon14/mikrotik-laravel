@@ -112,6 +112,11 @@ class MikrotikService
         return $this->query('/ip/hotspot/active/print');
     }
 
+    public function getPppProfiles()
+    {
+        return $this->query('/ppp/profile/print');
+    }
+
     // ─── IP Addresses ───
 
     public function getIpAddresses()

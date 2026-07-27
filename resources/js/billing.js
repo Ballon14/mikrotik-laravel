@@ -71,6 +71,44 @@ window.loadPackages = async function(page) {
     }
 };
 
+window.syncPackages = async function() {
+    const confirmed = await window.showConfirm("Apakah Anda yakin ingin melakukan sinkronisasi paket dengan PPP Profiles di MikroTik? Paket yang belum ada akan ditambahkan otomatis dengan harga 0.");
+    if (!confirmed) return;
+
+    const btn = document.getElementById('btnSyncPackages');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="icon-spin" style="width:14px;height:14px;"></i> Sinkronisasi...';
+        lucide.createIcons();
+    }
+
+    try {
+        const res = await fetch('/api/packages/sync', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
+        });
+        const json = await res.json();
+        
+        if (json.success) {
+            window.showToast(json.message || "Sinkronisasi berhasil", "success");
+            window.loadPackages();
+        } else {
+            window.showToast(json.message || "Gagal sinkronisasi", "error");
+        }
+    } catch (err) {
+        window.showToast("Gagal sinkronisasi: " + err.message, "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Sync MikroTik';
+            lucide.createIcons();
+        }
+    }
+};
+
 window.loadCustomers = async function(page) {
     try {
         const res = await fetch(`/api/customers?page=${page || 1}`);
@@ -155,6 +193,12 @@ window.loadInvoices = async function(page) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Packages page
+    const btnSyncPackages = document.getElementById('btnSyncPackages');
+    if (btnSyncPackages) {
+        btnSyncPackages.addEventListener('click', window.syncPackages);
+    }
+
     // ---- Packages ----
     const btnAddPackage = document.getElementById('btnAddPackage');
     const modalPackage = document.getElementById('packageModal');

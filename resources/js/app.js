@@ -2153,11 +2153,11 @@ async function init() {
     
     state.activeSection = section;
 
-    // Check daemon health first
-    await checkDaemonHealth();
-
-    // Load initial data
-    await loadSectionData(section);
+    // Load data and check daemon health concurrently to avoid waterfall delay
+    await Promise.all([
+        checkDaemonHealth(),
+        loadSectionData(section)
+    ]);
 
     // Initial Identity load if not overview (to get router name)
     if (section !== 'overview') {
