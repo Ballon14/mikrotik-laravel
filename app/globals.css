@@ -498,8 +498,23 @@ body::before {
 /* Section actions */
 .tab-actions { margin-bottom: 12px; }
 
+/* Mobile toggle */
+.mobile-toggle {
+  display: none;
+  position: fixed; top: 16px; left: 16px; z-index: 200;
+  width: 40px; height: 40px; border-radius: var(--radius-sm);
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  color: var(--text-primary); font-size: 20px; cursor: pointer;
+  align-items: center; justify-content: center;
+}
+.mobile-overlay {
+  display: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  .mobile-toggle { display: flex; }
+  .mobile-toggle:hover { background: var(--bg-hover); }
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
   .main-content { margin-left: 0; padding: 16px; padding-top: 60px; }

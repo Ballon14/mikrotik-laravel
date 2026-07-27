@@ -109,14 +109,6 @@ export default function DashboardLayout({ children }) {
         className="mobile-toggle"
         id="mobileToggle"
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        style={{
-          display: 'none',
-          position: 'fixed', top: '16px', left: '16px', zIndex: 200,
-          width: '40px', height: '40px', borderRadius: 'var(--radius-sm)',
-          background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-          color: 'var(--text-primary)', fontSize: '20px', cursor: 'pointer',
-          alignItems: 'center', justifyContent: 'center',
-        }}
       >
         {sidebarOpen ? '✕' : '☰'}
       </button>
@@ -131,7 +123,7 @@ export default function DashboardLayout({ children }) {
       />
 
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <div className="sidebar-logo-icon">📡</div>
